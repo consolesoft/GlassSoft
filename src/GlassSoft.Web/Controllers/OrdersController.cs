@@ -60,6 +60,13 @@ public class OrdersController : Controller
     {
         var order = await _orderService.GetByIdAsync(id);
         if (order == null) return NotFound();
+
+        // Açık kalan kalem bilgisini view'a ilet (manuel "Tamamla" butonu + uyarı için)
+        var openLines = (await _deliveryService.GetOpenLinesForOrderAsync(id)).ToList();
+        ViewBag.OpenLineCount = openLines.Count;
+        ViewBag.OpenRemainingTotal = openLines.Sum(l => l.RemainingQuantity);
+        ViewBag.HasOpenLines = openLines.Any();
+
         return View(order);
     }
 
@@ -149,9 +156,32 @@ public class OrdersController : Controller
             // (silinen kalemlerin teslimat satırı silinir, miktar aşımları düşürülür)
             var reconciledCount = await _deliveryService.ReconcileWithOrderAsync(dto.Id);
 
-            TempData["Success"] = reconciledCount > 0
+            // ───────── Düzenleme sonrası TESLİM DURUMU otomatik kontrolü ─────────
+            // 1) Tamamlanmış siparişe yeni kalem eklenmiş ve açık kalan varsa → Üretime düşür
+            // 2) Üretimdeki sipariş için tüm kalemler teslim edildiyse → Tamamlandı'ya yükselt
+            var openLines = (await _deliveryService.GetOpenLinesForOrderAsync(dto.Id)).ToList();
+            var hasOpen = openLines.Any();
+            string? statusChangeMsg = null;
+
+            if (currentStatus == OrderStatus.Tamamlandi && hasOpen)
+            {
+                // Tamamlanmıştı ama düzenleme sonrası açık kalem var → Üretime al
+                await _orderService.UpdateStatusAsync(dto.Id, OrderStatus.Uretimde);
+                statusChangeMsg = $"Düzenleme sonucu {openLines.Count} kalem teslim edilmemiş kaldı. Sipariş 'Üretimde' durumuna alındı. " +
+                                   "Kalan kalemleri teslim ettiğinizde 'Tamamla' butonuna basabilirsiniz.";
+            }
+            else if (currentStatus == OrderStatus.Uretimde && !hasOpen)
+            {
+                // Üretimde'ydi ve açık kalan yok → otomatik Tamamlandı
+                await _orderService.UpdateStatusAsync(dto.Id, OrderStatus.Tamamlandi);
+                await _orderService.SetCompletedAtAsync(dto.Id, TurkeyTime.Now);
+                statusChangeMsg = "Tüm kalemler teslim edilmiş olduğu için sipariş otomatik 'Tamamlandı' olarak işaretlendi.";
+            }
+
+            var baseMsg = reconciledCount > 0
                 ? $"Sipariş güncellendi. {reconciledCount} teslimat satırı yeni kalem yapısına göre uyarlandı."
                 : "Sipariş başarıyla güncellendi.";
+            TempData["Success"] = statusChangeMsg != null ? $"{baseMsg} {statusChangeMsg}" : baseMsg;
             return RedirectToAction(nameof(Details), new { id = dto.Id });
         }
         catch (Exception ex)

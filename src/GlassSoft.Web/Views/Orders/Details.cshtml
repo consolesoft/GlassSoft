@@ -297,15 +297,38 @@
                         </button>
                     </form>
                 }
-                @if (Model.Status == GlassSoft.Domain.Enums.OrderStatus.Uretimde)
+                @{
+                    var openLineCount = (int)(ViewBag.OpenLineCount ?? 0);
+                    var openRemainingTotal = (int)(ViewBag.OpenRemainingTotal ?? 0);
+                    var hasOpen = (bool)(ViewBag.HasOpenLines ?? false);
+                    // Düzenleme sonrası Tamamlandı durumda olup hala açık kalemi olan siparişler için uyarı
+                    var showCompleteForOpenAfterEdit = Model.Status == GlassSoft.Domain.Enums.OrderStatus.Tamamlandi && hasOpen;
+                }
+                @if (Model.Status == GlassSoft.Domain.Enums.OrderStatus.Uretimde
+                     || showCompleteForOpenAfterEdit)
                 {
+                    if (showCompleteForOpenAfterEdit)
+                    {
+                        <div class="alert alert-warning small p-2 mb-2">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Düzenleme sonrası <strong>@openLineCount kalemde @openRemainingTotal adet</strong> teslim edilmemiş kaldı.
+                        </div>
+                    }
+                    else if (hasOpen)
+                    {
+                        <div class="alert alert-info small p-2 mb-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Açık: <strong>@openLineCount kalem / @openRemainingTotal adet</strong>
+                        </div>
+                    }
                     <form asp-action="UpdateStatus" method="post" id="completeForm">
                         <input type="hidden" name="id" value="@Model.Id" />
                         <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.OrderStatus.Tamamlandi)" />
                         <input type="hidden" name="completedAt" id="completedAtInput" />
                         @Html.AntiForgeryToken()
                         <button type="button" class="btn btn-success btn-block mb-2" id="btnCompleteOrder">
-                            <i class="fas fa-check-double mr-1"></i> Tamamla
+                            <i class="fas fa-check-double mr-1"></i>
+                            @(showCompleteForOpenAfterEdit ? "Kalanları Teslim Et & Tamamla" : "Tamamla")
                         </button>
                     </form>
                 }
