@@ -15,14 +15,16 @@ public class ReportsController : Controller
     private readonly IPrintTemplateService _templateService;
     private readonly IProductItemService _productItemService;
     private readonly IProductGroupService _productGroupService;
+    private readonly IRecipeService _recipeService;
 
-    public ReportsController(IOrderService orderService, IStockService stockService, IPrintTemplateService templateService, IProductItemService productItemService, IProductGroupService productGroupService)
+    public ReportsController(IOrderService orderService, IStockService stockService, IPrintTemplateService templateService, IProductItemService productItemService, IProductGroupService productGroupService, IRecipeService recipeService)
     {
         _orderService = orderService;
         _stockService = stockService;
         _templateService = templateService;
         _productItemService = productItemService;
         _productGroupService = productGroupService;
+        _recipeService = recipeService;
     }
 
     // ═══════════ ÜRÜN SATIŞ RAPORU ═══════════
@@ -34,6 +36,11 @@ public class ReportsController : Controller
         // Ürünleri tek seferde çek → ProductItemId → (Code, GroupId, GroupName) haritası
         var allProducts = (await _productItemService.GetAllAsync()).ToList();
         var productMap = allProducts.ToDictionary(p => p.Id, p => (p.Code, p.Name, p.ProductGroupId, p.ProductGroupName));
+
+        // Reçeteleri çek → RecipeId → (Code, Name, ProductItemId) haritası
+        // Reçete bir ürüne bağlıysa o ürünün grup bilgisini kullanırız
+        var allRecipes = (await _recipeService.GetAllAsync()).ToList();
+        var recipeMap = allRecipes.ToDictionary(r => r.Id, r => (r.Code, r.Name, r.ProductItemId));
 
         // Taslak ve İptal hariç, teslim (kapanma) tarihi olan tüm siparişleri dahil et
         var orders = (await _orderService.GetAllAsync())
@@ -58,23 +65,52 @@ public class ReportsController : Controller
 
                 if (l.ProductItemId.HasValue && productMap.TryGetValue(l.ProductItemId.Value, out var pm))
                 {
+                    // Doğrudan ürün
                     code = pm.Code;
                     name = pm.Name;
                     groupId = pm.ProductGroupId;
                     groupName = pm.ProductGroupName;
                 }
+                else if (l.RecipeId.HasValue && recipeMap.TryGetValue(l.RecipeId.Value, out var rm))
+                {
+                    // Reçete — code/name reçeteden, grup bilgisi reçetenin bağlı olduğu üründen gelir
+                    code = rm.Code;
+                    name = string.IsNullOrEmpty(rm.Name) ? rm.Code : rm.Name;
+                    if (rm.ProductItemId.HasValue && productMap.TryGetValue(rm.ProductItemId.Value, out var rpm))
+                    {
+                        groupId = rpm.ProductGroupId;
+                        groupName = rpm.ProductGroupName;
+                    }
+                    else
+                    {
+                        groupName = "Reçete (Gruplandırılmamış)";
+                    }
+                }
                 else
                 {
                     code = l.RecipeCode ?? "-";
                     name = l.ProductItemName ?? l.RecipeCode ?? "Bilinmeyen";
-                    groupName = "Reçete / Diğer";
+                    groupName = "Diğer";
                 }
 
                 // Ürün grubu filtresi
-                if (productGroupId.HasValue && productGroupId.Value > 0)
+                if (productGroupId.HasValue)
                 {
-                    if (!groupId.HasValue || groupId.Value != productGroupId.Value)
-                        continue;
+                    if (productGroupId.Value == -1)
+                    {
+                        // Özel filtre: Sadece reçeteler
+                        if (!l.RecipeId.HasValue) continue;
+                    }
+                    else if (productGroupId.Value == -2)
+                    {
+                        // Özel filtre: Sadece direkt ürünler (reçete olmayan)
+                        if (!l.ProductItemId.HasValue || l.RecipeId.HasValue) continue;
+                    }
+                    else if (productGroupId.Value > 0)
+                    {
+                        if (!groupId.HasValue || groupId.Value != productGroupId.Value)
+                            continue;
+                    }
                 }
 
                 // Ürün kodu filtresi (contains, case-insensitive)
@@ -111,12 +147,16 @@ public class ReportsController : Controller
         ViewBag.ToplamM2 = grouped.Sum(g => g.ToplamM2);
         ViewBag.ToplamAdet = grouped.Sum(g => g.ToplamAdet);
 
-        // Ürün grubu dropdown'u için liste
+        // Ürün grubu dropdown'u için liste — özel filtreler de eklenir
         var groups = await _productGroupService.GetAllAsync();
-        ViewBag.ProductGroups = new SelectList(
-            new[] { new { Id = 0, Name = "Tüm Gruplar" } }
-                .Concat(groups.Where(g => g.IsActive).Select(g => new { Id = g.Id, Name = g.Name })),
-            "Id", "Name", productGroupId ?? 0);
+        var groupOptions = new List<object>
+        {
+            new { Id = 0, Name = "Tüm Gruplar" },
+            new { Id = -1, Name = "🧬 Sadece Reçeteler" },
+            new { Id = -2, Name = "📦 Sadece Ürünler (reçete dışı)" }
+        };
+        groupOptions.AddRange(groups.Where(g => g.IsActive).Select(g => (object)new { Id = g.Id, Name = g.Name }));
+        ViewBag.ProductGroups = new SelectList(groupOptions, "Id", "Name", productGroupId ?? 0);
 
         var templates = await _templateService.GetByOutputTypeAsync(OutputType.UrunSatisRaporu);
         var defaultTemplate = templates.FirstOrDefault(t => t.IsDefault) ?? templates.FirstOrDefault();

@@ -208,8 +208,10 @@ public class OrdersController : Controller
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // Üretimde → Tamamlandı geçişinde otomatik tam teslimat oluştur (açık miktar varsa)
-        if (status == OrderStatus.Tamamlandi && previousStatus == OrderStatus.Uretimde)
+        // Tamamlandı'ya geçişte (Üretimde'den VEYA düzenleme sonrası Tamamlandı'da kalmış açık kalemler için)
+        // otomatik tam teslimat oluştur — servis açık kalan yoksa zaten null döner.
+        if (status == OrderStatus.Tamamlandi
+            && (previousStatus == OrderStatus.Uretimde || previousStatus == OrderStatus.Tamamlandi))
         {
             try
             {
