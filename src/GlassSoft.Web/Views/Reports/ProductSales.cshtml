@@ -93,7 +93,9 @@
             <thead>
                 <tr>
                     <th style="width:40px">#</th>
+                    <th>Kod</th>
                     <th>Ürün / Reçete</th>
+                    <th>Grup</th>
                     <th class="text-right">Toplam Adet</th>
                     <th class="text-right">Toplam m²</th>
                     <th class="text-right">Sipariş Sayısı</th>
@@ -105,7 +107,9 @@
                 {
                     <tr>
                         <td>@(i++)</td>
+                        <td><small class="text-muted">@row.UrunKodu</small></td>
                         <td>@row.UrunAdi</td>
+                        <td><span class="badge badge-secondary">@row.UrunGrubu</span></td>
                         <td class="text-right">@row.ToplamAdet</td>
                         <td class="text-right"><strong>@row.ToplamM2.ToString("N2")</strong> m²</td>
                         <td class="text-right">@row.SiparisSayisi</td>
@@ -117,5 +121,5 @@
 </div>
 
 @section Scripts {
-    <script>$(document).ready(function() { $('#tbl').DataTable({ "order": [[3, "desc"]], "pageLength": 50 }); });</script>
+    <script>$(document).ready(function() { $('#tbl').DataTable({ "order": [[5, "desc"]], "pageLength": 50 }); });</script>
 }
