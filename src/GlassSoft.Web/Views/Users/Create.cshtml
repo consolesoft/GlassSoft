@@ -1,0 +1,79 @@
+@model GlassSoft.Web.Models.User.UserCreateViewModel
+@{
+    ViewData["Title"] = "Yeni Kullanıcı";
+    ViewData["Breadcrumb"] = "Yönetim";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-plus mr-2"></i>Yeni Kullanıcı</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="FirstName"></label>
+                                <input asp-for="FirstName" class="form-control" placeholder="Adını girin" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="LastName"></label>
+                                <input asp-for="LastName" class="form-control" placeholder="Soyadını girin" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Email"></label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="ornek@glassoft.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Password"></label>
+                                <input asp-for="Password" type="password" class="form-control" placeholder="En az 6 karakter" />
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ConfirmPassword"></label>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Şifreyi tekrar girin" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="SelectedRoleId"></label>
+                        <select asp-for="SelectedRoleId" asp-items="@(ViewBag.Roles as SelectList)" class="form-control select2">
+                            <option value="">-- Rol Seçin --</option>
+                        </select>
+                        <span asp-validation-for="SelectedRoleId" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input asp-for="IsActive" class="custom-control-input" id="isActive" checked>
+                            <label class="custom-control-label" for="isActive">Aktif</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>$(document).ready(function() { $('.select2').select2({ placeholder: '-- Rol Seçin --', allowClear: true }); });</script>
+}

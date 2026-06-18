@@ -1,0 +1,74 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Product.StockSummaryDto>
+@{
+    ViewData["Title"] = "Stok Durumu";
+    ViewData["Breadcrumb"] = "Ürün & Stok";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-warehouse mr-2"></i>Stok Durumu</h3>
+        <div class="card-tools">
+            <a asp-action="Entry" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Stok Hareketi
+            </a>
+            <a asp-action="Movements" class="btn btn-info btn-sm ml-1">
+                <i class="fas fa-exchange-alt mr-1"></i> Tüm Hareketler
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblStock" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Ürün Adı</th>
+                    <th>Grup</th>
+                    <th>Birim</th>
+                    <th>Miktar</th>
+                    <th>Plaka Adet</th>
+                    <th style="width: 80px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.ProductCode</strong></td>
+                        <td>@item.ProductName</td>
+                        <td><span class="badge badge-primary">@item.ProductGroupName</span></td>
+                        <td>@item.UnitDisplay</td>
+                        <td class="text-right">
+                            <span class="@(item.TotalQuantity > 0 ? "text-success" : item.TotalQuantity < 0 ? "text-danger" : "")">
+                                @item.TotalQuantity.ToString("N2")
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            @if (item.IsPlate)
+                            {
+                                <span class="badge badge-info">@item.TotalPlateCount adet</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Movements" asp-route-productItemId="@item.ProductItemId" class="btn btn-info btn-xs" title="Hareketler">
+                                <i class="fas fa-exchange-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblStock').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

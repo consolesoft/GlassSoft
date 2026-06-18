@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GlassSoft.Application/GlassSoft.Application.csproj" />
+    <Project Path="src/GlassSoft.Domain/GlassSoft.Domain.csproj" />
+    <Project Path="src/GlassSoft.Infrastructure/GlassSoft.Infrastructure.csproj" />
+    <Project Path="src/GlassSoft.Web/GlassSoft.Web.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,104 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Accounting.CashRegisterDto>
+@{
+    ViewData["Title"] = "Kasa Takibi";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<!-- Toplam Bakiye -->
+<div class="row">
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@(((decimal)(ViewBag.TotalBalance ?? 0m)).ToString("N2")) TRY</h3>
+                <p>Toplam Kasa Bakiyesi (TRY)</p>
+            </div>
+            <div class="icon"><i class="fas fa-cash-register"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@Model.Count(r => r.IsActive)</h3>
+                <p>Aktif Kasa</p>
+            </div>
+            <div class="icon"><i class="fas fa-wallet"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-secondary">
+            <div class="inner">
+                <h3>@Model.Sum(r => r.TransactionCount)</h3>
+                <p>Toplam İşlem</p>
+            </div>
+            <div class="icon"><i class="fas fa-exchange-alt"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Kasa Kartları -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-cash-register mr-2"></i>Kasalar</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Kasa
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-cash-register fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Henüz kasa tanımlanmamış.</p>
+                <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus mr-1"></i> İlk Kasanı Oluştur</a>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var register in Model)
+                {
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card @(register.IsActive ? "" : "bg-light")">
+                            <div class="card-header border-bottom-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-wallet mr-1"></i>
+                                        @register.Name
+                                    </h3>
+                                    @if (!register.IsActive)
+                                    {
+                                        <span class="badge badge-secondary">Pasif</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="card-body pt-0">
+                                <div class="text-center mb-3">
+                                    <h2 class="@(register.Balance >= 0 ? "text-success" : "text-danger") mb-0">
+                                        @register.Balance.ToString("N2")
+                                    </h2>
+                                    <span class="badge badge-info">@register.Currency</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted small">
+                                    <span><i class="fas fa-exchange-alt mr-1"></i> @register.TransactionCount işlem</span>
+                                    <span>@(register.Description ?? "")</span>
+                                </div>
+                            </div>
+                            <div class="card-footer text-center">
+                                <a asp-action="Details" asp-route-id="@register.Id" class="btn btn-info btn-sm">
+                                    <i class="fas fa-eye mr-1"></i> Detay
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

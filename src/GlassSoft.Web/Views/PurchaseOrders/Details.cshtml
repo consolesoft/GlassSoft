@@ -1,0 +1,216 @@
+@model GlassSoft.Application.DTOs.Purchasing.PurchaseOrderDto
+@{
+    ViewData["Title"] = $"Satın Alma - {Model.OrderNumber}";
+    ViewData["Breadcrumb"] = "Satın Alma";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Sipariş Bilgileri -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-file-invoice mr-2"></i>@Model.OrderNumber</h3>
+                <div class="card-tools">
+                    <span class="badge @Model.StatusBadgeClass" style="font-size: 0.9rem;">@Model.StatusDisplay</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3"><strong>Cari (Tedarikçi):</strong></div>
+                    <div class="col-md-3">@Model.CustomerTitle</div>
+                    <div class="col-md-3"><strong>Sipariş Tarihi:</strong></div>
+                    <div class="col-md-3">@Model.OrderDate.ToString("dd.MM.yyyy")</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Para Birimi:</strong></div>
+                    <div class="col-md-3"><span class="badge badge-info">@Model.Currency</span></div>
+                    <div class="col-md-3"><strong>KDV Oranı:</strong></div>
+                    <div class="col-md-3"><span class="badge badge-info">%@Model.TaxRate</span></div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="row mt-2">
+                        <div class="col-md-3"><strong>Notlar:</strong></div>
+                        <div class="col-md-9">@Model.Notes</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Sipariş Kalemleri -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Sipariş Kalemleri (@Model.Lines.Count)</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-bordered table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Ürün</th>
+                            <th>Miktar</th>
+                            <th>Birim Fiyat</th>
+                            <th>Toplam</th>
+                            <th>Teslim Alınan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ var lineNo = 0; }
+                        @foreach (var line in Model.Lines)
+                        {
+                            lineNo++;
+                            <tr>
+                                <td>@lineNo</td>
+                                <td><span class="badge badge-primary">@line.ProductItemName</span></td>
+                                <td class="text-right">@line.Quantity.ToString("N2")</td>
+                                <td class="text-right">@line.UnitPrice.ToString("N2")</td>
+                                <td class="text-right"><strong>@line.TotalPrice.ToString("N2")</strong></td>
+                                <td class="text-center">
+                                    @if (line.ReceivedQuantity >= line.Quantity)
+                                    {
+                                        <span class="badge badge-success">@line.ReceivedQuantity.ToString("N2")</span>
+                                    }
+                                    else if (line.ReceivedQuantity > 0)
+                                    {
+                                        <span class="badge badge-warning">@line.ReceivedQuantity.ToString("N2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">0</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4" class="text-right">Ara Toplam:</th>
+                            <th class="text-right">@Model.TotalAmount.ToString("N2") @Model.Currency</th>
+                            <th></th>
+                        </tr>
+                        @if (Model.TaxRate > 0)
+                        {
+                            <tr>
+                                <th colspan="4" class="text-right">KDV (%@Model.TaxRate):</th>
+                                <th class="text-right">@Model.TaxAmount.ToString("N2") @Model.Currency</th>
+                                <th></th>
+                            </tr>
+                        }
+                        <tr>
+                            <th colspan="4" class="text-right">Genel Toplam:</th>
+                            <th class="text-right"><strong class="text-primary">@Model.GrandTotal.ToString("N2") @Model.Currency</strong></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Durum Yönetimi -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Durum Yönetimi</h3>
+            </div>
+            <div class="card-body">
+                @if (Model.Status == GlassSoft.Domain.Enums.PurchaseOrderStatus.Taslak)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.PurchaseOrderStatus.Onaylandi)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary btn-block mb-2">
+                            <i class="fas fa-check mr-1"></i> Onayla (Stok + Cari)
+                        </button>
+                    </form>
+                }
+                @if (Model.Status == GlassSoft.Domain.Enums.PurchaseOrderStatus.Onaylandi)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.PurchaseOrderStatus.KismiTeslim)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning btn-block mb-2">
+                            <i class="fas fa-truck-loading mr-1"></i> Kısmi Teslim
+                        </button>
+                    </form>
+                }
+                @if (Model.Status == GlassSoft.Domain.Enums.PurchaseOrderStatus.Onaylandi || Model.Status == GlassSoft.Domain.Enums.PurchaseOrderStatus.KismiTeslim)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.PurchaseOrderStatus.Tamamlandi)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-check-double mr-1"></i> Tamamla
+                        </button>
+                    </form>
+                }
+                @if (Model.Status != GlassSoft.Domain.Enums.PurchaseOrderStatus.IptalEdildi && Model.Status != GlassSoft.Domain.Enums.PurchaseOrderStatus.Tamamlandi)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.PurchaseOrderStatus.IptalEdildi)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger btn-block mb-2" onclick="return confirm('İptal etmek istediğinize emin misiniz?')">
+                            <i class="fas fa-times mr-1"></i> İptal Et
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- Özet -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-calculator mr-2"></i>Özet</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Toplam Kalem:</span>
+                    <strong>@Model.Lines.Count</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Toplam Miktar:</span>
+                    <strong>@Model.Lines.Sum(l => l.Quantity).ToString("N2")</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Teslim Alınan:</span>
+                    <strong>@Model.Lines.Sum(l => l.ReceivedQuantity).ToString("N2")</strong>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Ara Toplam:</span>
+                    <strong>@Model.TotalAmount.ToString("N2") @Model.Currency</strong>
+                </div>
+                @if (Model.TaxRate > 0)
+                {
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>KDV (%@Model.TaxRate):</span>
+                        <strong>@Model.TaxAmount.ToString("N2") @Model.Currency</strong>
+                    </div>
+                }
+                <div class="d-flex justify-content-between">
+                    <span class="h5">Genel Toplam:</span>
+                    <strong class="h5 text-primary">@Model.GrandTotal.ToString("N2") @Model.Currency</strong>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Status != GlassSoft.Domain.Enums.PurchaseOrderStatus.Tamamlandi && Model.Status != GlassSoft.Domain.Enums.PurchaseOrderStatus.IptalEdildi)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block"><i class="fas fa-edit mr-1"></i> Düzenle</a>
+        }
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Bu satın alma siparişini silmek istediğinize emin misiniz?')">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger btn-block mt-1"><i class="fas fa-trash mr-1"></i> Sil</button>
+        </form>
+        <a asp-action="Index" class="btn btn-secondary btn-block"><i class="fas fa-arrow-left mr-1"></i> Listeye Dön</a>
+    </div>
+</div>

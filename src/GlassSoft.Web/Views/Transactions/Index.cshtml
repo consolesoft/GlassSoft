@@ -1,0 +1,121 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Accounting.AccountTransactionDto>
+@{
+    ViewData["Title"] = "Cari Hareketler";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+@if (ViewBag.CustomerTitle != null)
+{
+    <div class="callout callout-info">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5><i class="fas fa-user mr-2"></i>@ViewBag.CustomerTitle</h5>
+                <p class="mb-0">
+                    Bakiye: <strong class="@(ViewBag.CustomerBalance >= 0 ? "text-danger" : "text-success")">
+                        @(((decimal)ViewBag.CustomerBalance).ToString("N2")) TRY
+                    </strong>
+                    <span class="text-muted ml-2">(@(ViewBag.CustomerBalance >= 0 ? "Cari Borçlu" : "Cari Alacaklı"))</span>
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-info btn-sm mr-1" onclick="openPrintModal(@((int)GlassSoft.Domain.Enums.OutputType.CariHareketleri), @ViewBag.CustomerId)">
+                    <i class="fas fa-print mr-1"></i> Hareket Raporu
+                </button>
+                <button class="btn btn-info btn-sm mr-1" onclick="openPrintModal(@((int)GlassSoft.Domain.Enums.OutputType.CariEkstre), @ViewBag.CustomerId)">
+                    <i class="fas fa-file-invoice mr-1"></i> Ekstre
+                </button>
+                <a asp-action="Index" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-times mr-1"></i> Filtreyi Kaldır
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ViewBag.OrderNumberFilter != null)
+{
+    <div class="alert alert-info">
+        <i class="fas fa-filter mr-1"></i>
+        <strong>@ViewBag.OrderNumberFilter</strong> numaralı siparişe ait cari hareketler gösteriliyor.
+        <a asp-action="Index" asp-route-customerId="@ViewBag.CustomerId" class="ml-2"><i class="fas fa-times mr-1"></i>Filtreyi Kaldır</a>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-exchange-alt mr-2"></i>Cari Hareketler</h3>
+        <div class="card-tools">
+            <a asp-action="Virman" class="btn btn-info btn-sm mr-1">
+                <i class="fas fa-exchange-alt mr-1"></i> Virman
+            </a>
+            <a asp-action="Create" asp-route-customerId="@ViewBag.CustomerId" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Hareket
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblTransactions" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Müşteri</th>
+                    <th>Tür</th>
+                    <th>Ödeme Tipi</th>
+                    <th>Tutar</th>
+                    <th>Para Birimi</th>
+                    <th>Tutar (TRY)</th>
+                    <th>Açıklama</th>
+                    <th style="width: 60px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-order="@item.TransactionDate.ToString("yyyy-MM-dd")">@item.TransactionDate.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            <a asp-action="Index" asp-route-customerId="@item.CustomerId" class="text-decoration-none">
+                                @item.CustomerTitle
+                            </a>
+                        </td>
+                        <td><span class="badge @item.TypeBadgeClass">@item.TypeDisplay</span></td>
+                        <td>@item.PaymentTypeDisplay</td>
+                        <td class="text-right">@item.Amount.ToString("N2")</td>
+                        <td><span class="badge badge-info">@item.Currency</span></td>
+                        <td class="text-right"><strong>@item.AmountTRY.ToString("N2")</strong></td>
+                        <td>@(item.Description ?? "-")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu cari hareketi silmek istediğinize emin misiniz? Bağlı kasa hareketi varsa o da silinecek ve bakiyeler güncellenecek.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (ViewBag.CustomerId != null)
+{
+    @await Html.PartialAsync("_PrintModal")
+}
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblTransactions').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

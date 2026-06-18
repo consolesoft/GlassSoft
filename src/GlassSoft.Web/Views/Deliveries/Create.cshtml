@@ -1,0 +1,184 @@
+@model GlassSoft.Application.DTOs.Sales.DeliveryCreateDto
+@{
+    ViewData["Title"] = "Yeni Teslimat";
+    ViewData["Breadcrumb"] = "Satış";
+    var openOrders = ViewBag.OpenOrders as List<GlassSoft.Application.DTOs.Sales.OpenOrderDto> ?? new();
+    var openLines = ViewBag.OpenLines as List<GlassSoft.Application.DTOs.Sales.OpenOrderLineDto> ?? new();
+}
+
+<form asp-action="Create" method="post" id="deliveryForm">
+    @Html.AntiForgeryToken()
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-truck mr-2"></i>Yeni Teslimat Belgesi</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Sipariş <span class="text-danger">*</span></label>
+                        <select name="OrderId" id="orderSelect" class="form-control select2" required>
+                            <option value="">Açık sipariş seçin...</option>
+                            @foreach (var o in openOrders)
+                            {
+                                if (o.OrderId == Model.OrderId)
+                                {
+                                    <option value="@o.OrderId" selected>
+                                        @o.OrderNumber - @o.CustomerTitle (Kalan: @o.TotalRemainingQuantity adet)
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@o.OrderId">
+                                        @o.OrderNumber - @o.CustomerTitle (Kalan: @o.TotalRemainingQuantity adet)
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <small class="text-muted">Sadece "Onaylandı" veya "Üretimde" durumundaki açık siparişler listelenir.</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="DeliveryDate">Teslim Tarihi</label>
+                        <input asp-for="DeliveryDate" type="date" class="form-control" value="@Model.DeliveryDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Notes">Açıklama / Notlar</label>
+                <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-list mr-2"></i>Teslim Edilecek Kalemler</h3>
+        </div>
+        <div class="card-body">
+            <div id="linesContainer">
+                @if (openLines.Any())
+                {
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width:40px"><input type="checkbox" id="selectAll" /></th>
+                                <th>Poz</th>
+                                <th>Ürün / Reçete</th>
+                                <th class="text-right">En × Boy</th>
+                                <th class="text-right">Sipariş</th>
+                                <th class="text-right">Teslim Edildi</th>
+                                <th class="text-right">Kalan</th>
+                                <th style="width:120px" class="text-center">Bu Teslimat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                            @{ int i = 0; }
+                            @foreach (var l in openLines)
+                            {
+                                <tr class="line-row" data-line-id="@l.OrderLineId" data-max="@l.RemainingQuantity">
+                                    <td class="text-center">
+                                        <input type="checkbox" class="line-check" />
+                                    </td>
+                                    <td>@(l.PozNo ?? "-")</td>
+                                    <td>@l.ProductName</td>
+                                    <td class="text-right">
+                                        @if (l.IsRetail)
+                                        {
+                                            <span class="text-muted">Perakende</span>
+                                        }
+                                        else
+                                        {
+                                            @($"{l.WidthMm}×{l.HeightMm}")
+                                        }
+                                    </td>
+                                    <td class="text-right">@l.OrderQuantity</td>
+                                    <td class="text-right">@l.DeliveredQuantity</td>
+                                    <td class="text-right"><strong>@l.RemainingQuantity</strong></td>
+                                    <td>
+                                        <input type="hidden" name="Lines[@i].OrderLineId" value="@l.OrderLineId" class="line-orderlineid" />
+                                        <input type="number" name="Lines[@i].Quantity" min="0" max="@l.RemainingQuantity" value="0"
+                                               class="form-control form-control-sm text-right line-qty" disabled />
+                                    </td>
+                                </tr>
+                                i++;
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (Model.OrderId > 0)
+                {
+                    <div class="alert alert-warning">Bu siparişte teslim edilebilecek açık kalem kalmadı.</div>
+                }
+                else
+                {
+                    <div class="alert alert-info">Önce bir sipariş seçin, kalemleri yüklensin.</div>
+                }
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" name="action" value="draft" class="btn btn-secondary"><i class="fas fa-save mr-1"></i> Taslak Olarak Kaydet</button>
+            <button type="submit" name="action" value="approve" class="btn btn-success ml-2" id="btnApprove"><i class="fas fa-check mr-1"></i> Kaydet & Onayla</button>
+            <a asp-action="Index" class="btn btn-light ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+    $(function() {
+        // Sipariş değişince satırları yükle
+        $('#orderSelect').on('change', function() {
+            var orderId = $(this).val();
+            if (!orderId) {
+                window.location.href = '@Url.Action("Create")';
+                return;
+            }
+            window.location.href = '@Url.Action("Create")?orderId=' + orderId;
+        });
+
+        // Tümünü seç
+        $('#selectAll').on('change', function() {
+            var checked = $(this).is(':checked');
+            $('.line-check').prop('checked', checked).trigger('change');
+        });
+
+        // Tek tek check
+        $(document).on('change', '.line-check', function() {
+            var $row = $(this).closest('tr');
+            var $qty = $row.find('.line-qty');
+            var max = parseInt($row.data('max')) || 0;
+            if ($(this).is(':checked')) {
+                $qty.prop('disabled', false).val(max);
+            } else {
+                $qty.prop('disabled', true).val(0);
+            }
+        });
+
+        // Miktar üst sınır kontrolü
+        $(document).on('input', '.line-qty', function() {
+            var max = parseInt($(this).attr('max')) || 0;
+            var v = parseInt($(this).val()) || 0;
+            if (v > max) {
+                $(this).val(max);
+                Swal.fire({ icon: 'warning', title: 'Sınır aşıldı', text: 'En fazla ' + max + ' adet teslim edilebilir.' });
+            }
+            if (v < 0) $(this).val(0);
+        });
+
+        // Form submit kontrol
+        $('#deliveryForm').on('submit', function(e) {
+            var hasLine = false;
+            $('.line-qty').each(function() {
+                if ((parseInt($(this).val()) || 0) > 0) { hasLine = true; return false; }
+            });
+            if (!hasLine) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', title: 'Kalem yok', text: 'En az bir kalem ve miktar girilmelidir.' });
+                return false;
+            }
+        });
+    });
+    </script>
+}

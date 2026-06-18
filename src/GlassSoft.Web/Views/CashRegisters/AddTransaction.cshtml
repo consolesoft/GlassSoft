@@ -1,0 +1,106 @@
+@model GlassSoft.Application.DTOs.Accounting.CashTransactionCreateDto
+@{
+    ViewData["Title"] = "Kasa İşlemi Ekle";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Kasa İşlemi</h3>
+            </div>
+            <form asp-action="AddTransaction" method="post">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="CashRegisterId">Kasa <span class="text-danger">*</span></label>
+                                <select asp-for="CashRegisterId" asp-items="@ViewBag.Registers" class="form-control" required>
+                                    <option value="">Kasa Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Type">İşlem Türü <span class="text-danger">*</span></label>
+                                <select asp-for="Type" class="form-control" required>
+                                    <option value="0">Giriş (Tahsilat / Para Girişi)</option>
+                                    <option value="1">Çıkış (Ödeme / Para Çıkışı)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="TransactionDate">Tarih <span class="text-danger">*</span></label>
+                                <input asp-for="TransactionDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Amount">Tutar <span class="text-danger">*</span></label>
+                                <input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control" placeholder="0.00" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="PaymentType">Ödeme Tipi</label>
+                                <select asp-for="PaymentType" class="form-control" required>
+                                    <option value="0">Nakit</option>
+                                    <option value="1">Havale</option>
+                                    <option value="2">Çek</option>
+                                    <option value="3">Senet</option>
+                                    <option value="4">Kredi Kartı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="İşlem açıklaması..."></textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save mr-1"></i> İşlemi Kaydet</button>
+                    @if (Model.CashRegisterId > 0)
+                    {
+                        <a asp-action="Details" asp-route-id="@Model.CashRegisterId" class="btn btn-secondary ml-2">
+                            <i class="fas fa-arrow-left mr-1"></i> Geri
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" class="btn btn-secondary ml-2">
+                            <i class="fas fa-arrow-left mr-1"></i> Geri
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-success">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Bilgi</h3>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">
+                    <i class="fas fa-arrow-down text-success mr-1"></i>
+                    <strong>Giriş:</strong> Kasaya para girişi (tahsilat, satış geliri, transfer vs.)
+                </p>
+                <hr>
+                <p class="small text-muted">
+                    <i class="fas fa-arrow-up text-danger mr-1"></i>
+                    <strong>Çıkış:</strong> Kasadan para çıkışı (ödeme, gider, transfer vs.)
+                </p>
+                <hr>
+                <p class="small text-muted">
+                    <i class="fas fa-balance-scale text-info mr-1"></i>
+                    Kasa bakiyesi her işlemde otomatik güncellenir.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

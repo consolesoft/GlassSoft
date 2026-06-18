@@ -1,0 +1,67 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Product.GlassPlateDefinitionDto>
+@{
+    ViewData["Title"] = "Plaka Tanımları";
+    ViewData["Breadcrumb"] = "Ürün & Stok";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-th-large mr-2"></i>Plaka Tanımları</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Plaka
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblPlates" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Plaka Adı</th>
+                    <th>Genişlik (mm)</th>
+                    <th>Yükseklik (mm)</th>
+                    <th>Alan (m²)</th>
+                    <th>Varsayılan</th>
+                    <th style="width: 100px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@(string.IsNullOrEmpty(item.Name) ? item.DisplayName : item.Name)</strong></td>
+                        <td class="text-right">@item.WidthMm.ToString("0")</td>
+                        <td class="text-right">@item.HeightMm.ToString("0")</td>
+                        <td class="text-right">@item.AreaM2.ToString("N2") m²</td>
+                        <td>
+                            @if (item.IsDefault)
+                            {
+                                <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Varsayılan</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs btn-delete" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblPlates').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

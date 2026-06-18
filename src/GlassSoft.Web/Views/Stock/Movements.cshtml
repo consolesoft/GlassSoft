@@ -1,0 +1,110 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Product.StockEntryDto>
+@{
+    var productName = ViewBag.ProductName as string;
+    ViewData["Title"] = productName != null ? $"Stok Hareketleri - {productName}" : "Son Stok Hareketleri";
+    ViewData["Breadcrumb"] = "Ürün & Stok";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-exchange-alt mr-2"></i>
+            @if (productName != null)
+            {
+                <span>Stok Hareketleri - <strong>@productName</strong></span>
+                <span class="badge badge-info ml-2" style="font-size: 0.85rem;">
+                    <i class="fas fa-cubes mr-1"></i>Güncel Stok: @(((decimal)(ViewBag.CurrentStockQty ?? 0m)).ToString("N2")) @(ViewBag.StockUnit ?? "Adet")
+                    @if ((bool)(ViewBag.IsPlate ?? false) && (int)(ViewBag.CurrentStockPlateCount ?? 0) > 0)
+                    {
+                        <text> | @(ViewBag.CurrentStockPlateCount) Plaka</text>
+                    }
+                </span>
+            }
+            else
+            {
+                <span>Son Stok Hareketleri</span>
+            }
+        </h3>
+        <div class="card-tools">
+            <a asp-action="Entry" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Stok Hareketi
+            </a>
+            <a asp-action="Index" class="btn btn-secondary btn-sm ml-1">
+                <i class="fas fa-arrow-left mr-1"></i> Stok Durumu
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblMovements" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Ürün</th>
+                    <th>Hareket</th>
+                    <th>Miktar</th>
+                    <th>Plaka Adet</th>
+                    <th>Plaka Boyutu</th>
+                    <th>Referans</th>
+                    <th>Açıklama</th>
+                    <th style="width:80px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-order="@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")">@item.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@item.ProductItemName</td>
+                        <td>
+                            @if (item.MovementType == GlassSoft.Domain.Enums.StockMovementType.Giris)
+                            {
+                                <span class="badge badge-success"><i class="fas fa-arrow-down mr-1"></i>Giriş</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger"><i class="fas fa-arrow-up mr-1"></i>Çıkış</span>
+                            }
+                        </td>
+                        <td class="text-right">@item.Quantity.ToString("N2")</td>
+                        <td class="text-right">
+                            @if (item.PlateCount > 0)
+                            {
+                                @item.PlateCount
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@(item.PlateDefinitionDisplay ?? "-")</td>
+                        <td>
+                            @if (item.ReferenceType != null)
+                            {
+                                <small class="text-muted">@item.ReferenceType #@item.ReferenceId</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Manuel</span>
+                            }
+                        </td>
+                        <td><small>@(item.Description ?? "-")</small></td>
+                        <td>
+                            @if (item.ReferenceType == "Manual" || item.ReferenceType == null)
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs" title="Düzenle"><i class="fas fa-edit"></i></a>
+                            }
+                            <form asp-action="ReverseAndDelete" asp-route-id="@item.Id" asp-route-productItemId="@ViewBag.ProductItemId" method="post" class="d-inline" onsubmit="return confirm('Bu hareketi silmek istediğinize emin misiniz? @(item.MovementType == GlassSoft.Domain.Enums.StockMovementType.Giris ? "Giriş siliniyor → stok azalacak" : "Çıkış siliniyor → stok artacak").')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs" title="Sil (ters hareket)"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblMovements').DataTable({ order: [[0, 'desc']] }); });</script>
+}

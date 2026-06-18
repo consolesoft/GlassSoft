@@ -1,0 +1,809 @@
+@model GlassSoft.Application.DTOs.Sales.OrderUpdateDto
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Sipariş Düzenle";
+    ViewData["Breadcrumb"] = "Satış";
+}
+
+<form asp-action="Edit" method="post" id="orderForm">
+    <input type="hidden" asp-for="Id" />
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Sipariş Bilgileri -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Sipariş Düzenle</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="CustomerId">Müşteri</label>
+                                <select asp-for="CustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label asp-for="OrderDate">Sipariş Tarihi</label>
+                                <input asp-for="OrderDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label asp-for="DeliveryDate">Termin Tarihi</label>
+                                <input asp-for="DeliveryDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label asp-for="CompletedAt">Teslim Tarihi</label>
+                                <input asp-for="CompletedAt" type="date" class="form-control" />
+                                <small class="form-text text-muted">Ürün Satış Raporu'nda kullanılır.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label asp-for="Currency">Döviz</label>
+                                <select asp-for="Currency" class="form-control no-select2">
+                                    <option value="TRY">TRY</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label asp-for="TaxRate">KDV %</label>
+                                <select asp-for="TaxRate" class="form-control no-select2" id="taxRateSelect">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="OrderCustomerName">Sipariş Müşterisi</label>
+                        <input asp-for="OrderCustomerName" class="form-control" placeholder="Örn: Mağaza adı, kontak kişi, alt müşteri" />
+                        <small class="text-muted">Cari/firma dışında siparişi veren özel müşteri adı (çıktılarda görünür)</small>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Notes">Notlar</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sipariş Kalemleri -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list mr-2"></i>Sipariş Kalemleri</h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("DownloadTemplate")" class="btn btn-success btn-sm mr-1" title="Excel Şablon İndir">
+                            <i class="fas fa-file-excel mr-1"></i> Şablon
+                        </a>
+                        <button type="button" class="btn btn-warning btn-sm mr-1" data-toggle="modal" data-target="#excelModal" title="Excel'den Aktar">
+                            <i class="fas fa-upload mr-1"></i> Excel Aktar
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnAddLine">
+                            <i class="fas fa-plus mr-1"></i> Kalem Ekle
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0" id="tblLines">
+                        <thead>
+                            <tr>
+                                <th style="width: 22%">Ürün/Reçete</th>
+                                <th style="width: 9%">En (mm)</th>
+                                <th style="width: 9%">Boy (mm)</th>
+                                <th style="width: 7%">Adet</th>
+                                <th style="width: 8%">Satır m²</th>
+                                <th style="width: 10%">Birim Fiyat</th>
+                                <th style="width: 10%">Toplam</th>
+                                <th style="width: 9%">Not</th>
+                                <th style="width: 8%">Poz No</th>
+                                <th style="width: 8%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Bilgi</h3>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Sipariş kalemlerinde ürün veya reçete seçebilirsiniz. En x Boy ölçüsünü mm cinsinden girin.</p>
+                    <p class="small text-muted">Birim fiyat m² başınadır. Toplam = Birim Fiyat x m² x Adet</p>
+                    <p class="small text-muted"><strong>Perakende:</strong> En/Boy boş bırakılırsa Toplam = Birim Fiyat x Adet</p>
+                    <p class="small text-muted">Son satırda <kbd>↓</kbd> yeni kalem, <kbd>Shift+↓</kbd> kopyalar.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Toplam m²:</span>
+                        <strong id="totalM2">0.00</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Ara Toplam:</span>
+                        <strong id="grandTotal">0.00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>KDV (<span id="taxRateDisplay">@Model.TaxRate</span>%):</span>
+                        <strong id="taxAmount">0.00</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="mb-0">Genel Toplam:</h5>
+                        <h4 class="mb-0 text-primary" id="grandTotalWithTax">0.00</h4>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="btnUpdate" class="btn btn-primary btn-block btn-lg"><i class="fas fa-save mr-1"></i> Güncelle</button>
+            <div class="text-center mt-2 small text-muted" id="autoSaveStatus">
+                <i class="fas fa-cloud mr-1"></i>Otomatik kayıt aktif
+            </div>
+            <a asp-action="Index" class="btn btn-secondary btn-block mt-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+        </div>
+    </div>
+</form>
+
+<!-- Fiyat Geçmişi Modal -->
+<div class="modal fade" id="priceHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-history mr-2"></i>Son Satış Fiyatları</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-bordered table-striped mb-0" id="priceHistoryTable">
+                    <thead>
+                        <tr>
+                            <th>Sipariş</th>
+                            <th>Tarih</th>
+                            <th>Müşteri</th>
+                            <th>En×Boy</th>
+                            <th>Adet</th>
+                            <th>Birim Fiyat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="priceHistoryBody"></tbody>
+                </table>
+                <div id="priceHistoryEmpty" class="text-center p-3 text-muted" style="display:none">
+                    <i class="fas fa-info-circle mr-1"></i> Bu ürün için satış geçmişi bulunamadı.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Excel Import Modal -->
+<div class="modal fade" id="excelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-excel mr-2"></i>Excel'den Toplu Aktar</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3">
+                    Önce <a href="@Url.Action("DownloadTemplate")">şablonu indirin</a>, doldurun, ardından buradan yükleyin.
+                </p>
+                <div class="form-group">
+                    <label>Excel Dosyası (.xlsx)</label>
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="excelFile" accept=".xlsx,.xls">
+                        <label class="custom-file-label" for="excelFile">Dosya seçin...</label>
+                    </div>
+                </div>
+                <div id="excelResult" style="display: none;">
+                    <div class="alert alert-info" id="excelInfo"></div>
+                    <div id="excelErrors" style="display: none;">
+                        <div class="alert alert-warning small" id="excelErrorList"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" id="btnImportExcel" disabled>
+                    <i class="fas fa-upload mr-1"></i> Aktar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'default' });
+
+        var productsJson = '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(((SelectList)ViewBag.Products).Select(x => new { x.Value, x.Text })))';
+        var recipesJson = '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(((SelectList)ViewBag.Recipes).Select(x => new { x.Value, x.Text })))';
+        var products = JSON.parse(productsJson);
+        var recipes = JSON.parse(recipesJson);
+        var featureDefs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.FeatureDefinitions));
+
+        function buildItemSelect(nameProduct, nameRecipe, selectedProductId, selectedRecipeId) {
+            var hasSelection = selectedProductId || selectedRecipeId;
+            var html = '<div class="d-flex align-items-center">';
+            html += '<select class="form-control form-control-sm item-select flex-grow-1" data-product-name="' + nameProduct + '" data-recipe-name="' + nameRecipe + '">';
+            html += '<option value="">Seçiniz...</option>';
+            if (products.length > 0) {
+                html += '<optgroup label="Ürünler">';
+                products.forEach(function(p) {
+                    var sel = (p.Value == selectedProductId) ? ' selected' : '';
+                    html += '<option value="P_' + p.Value + '"' + sel + '>' + p.Text + '</option>';
+                });
+                html += '</optgroup>';
+            }
+            if (recipes.length > 0) {
+                html += '<optgroup label="Reçeteler">';
+                recipes.forEach(function(r) {
+                    var sel = (r.Value == selectedRecipeId) ? ' selected' : '';
+                    html += '<option value="R_' + r.Value + '"' + sel + '>[Reçete] ' + r.Text + '</option>';
+                });
+                html += '</optgroup>';
+            }
+            html += '</select>';
+            html += '<button type="button" class="btn btn-outline-info btn-xs ml-1 btn-price-history" title="Son satış fiyatları" style="' + (hasSelection ? '' : 'display:none') + '"><i class="fas fa-history"></i></button>';
+            html += '</div>';
+            html += '<input type="hidden" name="' + nameProduct + '" value="' + (selectedProductId || '') + '" />';
+            html += '<input type="hidden" name="' + nameRecipe + '" value="' + (selectedRecipeId || '') + '" />';
+            return html;
+        }
+
+        var lineIndex = 0;
+        var minM2 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.MinM2 ?? 0m));
+
+        function calcLineTotal(row) {
+            var wVal = row.find('input[name$=".WidthMm"]').val();
+            var hVal = row.find('input[name$=".HeightMm"]').val();
+            var w = parseFloat(wVal) || 0;
+            var h = parseFloat(hVal) || 0;
+            var qty = parseInt(row.find('input[name$=".Quantity"]').val()) || 0;
+            var price = parseFloat(row.find('input[name$=".UnitPrice"]').val()) || 0;
+            var isRetail = (!wVal && !hVal) || (w === 0 && h === 0);
+            var total;
+            if (isRetail) {
+                row.find('.totalarea-display').html('<span class="text-muted">-</span>');
+                row.removeClass('table-warning');
+                total = qty * price;
+            } else {
+                var areaM2 = (w / 1000) * (h / 1000);
+                var effectiveM2 = areaM2;
+                var totalAreaM2 = areaM2 * qty;
+                if (minM2 > 0 && areaM2 > 0 && areaM2 < minM2) {
+                    effectiveM2 = minM2;
+                    row.find('.totalarea-display').html(totalAreaM2.toFixed(4) + ' <i class="fas fa-exclamation-triangle text-warning" title="Min m² uygulandı"></i>');
+                    row.addClass('table-warning');
+                } else {
+                    row.find('.totalarea-display').text(totalAreaM2.toFixed(4));
+                    row.removeClass('table-warning');
+                }
+                row.data('totalM2', totalAreaM2);
+                total = effectiveM2 * qty * price;
+            }
+            var featureRow = row.next('.feature-row');
+            if (featureRow.length) {
+                var featureTotal = 0;
+                featureRow.find('.feature-line-total').each(function() { featureTotal += parseFloat($(this).text()) || 0; });
+                total += featureTotal;
+            }
+            row.find('.line-total').text(total.toFixed(2));
+            calcGrandTotal();
+        }
+        function calcGrandTotal() {
+            var sum = 0;
+            var totalM2 = 0;
+            $('#linesBody .line-total').each(function() { sum += parseFloat($(this).text()) || 0; });
+            $('#linesBody tr').each(function() {
+                var m2 = $(this).data('totalM2');
+                if (m2) totalM2 += parseFloat(m2) || 0;
+            });
+            $('#totalM2').text(totalM2.toFixed(2));
+            $('#grandTotal').text(sum.toFixed(2));
+            var taxRate = parseInt($('#taxRateSelect').val()) || 0;
+            var taxAmount = sum * taxRate / 100;
+            $('#taxRateDisplay').text(taxRate);
+            $('#taxAmount').text(taxAmount.toFixed(2));
+            $('#grandTotalWithTax').text((sum + taxAmount).toFixed(2));
+        }
+
+        $('#taxRateSelect').on('change', function() { calcGrandTotal(); });
+
+        function buildFeatureSelect(selectedId) {
+            var html = '<select class="form-control form-control-sm feature-select">';
+            html += '<option value="">Özellik seçin...</option>';
+            featureDefs.forEach(function(f) {
+                var sel = (f.id == selectedId) ? ' selected' : '';
+                html += '<option value="' + f.id + '" data-price="' + f.unitPrice + '"' + sel + '>' + f.name + ' (' + parseFloat(f.unitPrice).toFixed(2) + ')</option>';
+            });
+            html += '</select>';
+            return html;
+        }
+
+        function buildLineRow(idx, productId, recipeId, w, h, qty, price, pozNo, notes, lineId) {
+            return '<tr class="line-row" data-line-idx="' + idx + '">' +
+                '<td>' + buildItemSelect('Lines[' + idx + '].ProductItemId', 'Lines[' + idx + '].RecipeId', productId, recipeId) +
+                    '<input type="hidden" name="Lines[' + idx + '].Id" value="' + (lineId || 0) + '" />' +
+                '</td>' +
+                '<td><input type="number" name="Lines[' + idx + '].WidthMm" step="1" class="form-control form-control-sm calc-input" value="' + (w || '') + '" /></td>' +
+                '<td><input type="number" name="Lines[' + idx + '].HeightMm" step="1" class="form-control form-control-sm calc-input" value="' + (h || '') + '" /></td>' +
+                '<td><input type="number" name="Lines[' + idx + '].Quantity" class="form-control form-control-sm calc-input" value="' + (qty || 1) + '" /></td>' +
+                '<td class="text-right align-middle"><span class="totalarea-display small">0.0000</span></td>' +
+                '<td><input type="number" name="Lines[' + idx + '].UnitPrice" step="0.01" class="form-control form-control-sm calc-input" value="' + (price || '') + '" /></td>' +
+                '<td class="text-right align-middle"><strong class="line-total">0.00</strong></td>' +
+                '<td><input type="text" name="Lines[' + idx + '].Notes" class="form-control form-control-sm" placeholder="Not" value="' + (notes || '') + '" /></td>' +
+                '<td><input type="text" name="Lines[' + idx + '].PozNo" class="form-control form-control-sm" placeholder="Poz" value="' + (pozNo || '') + '" /></td>' +
+                '<td class="text-nowrap">' +
+                    '<button type="button" class="btn btn-outline-secondary btn-xs btn-toggle-features mr-1" title="Özellikler"><i class="fas fa-tags"></i></button>' +
+                    '<button type="button" class="btn btn-danger btn-xs btn-remove-row"><i class="fas fa-times"></i></button>' +
+                '</td>' +
+                '</tr>';
+        }
+
+        function buildFeatureRow(lineIdx) {
+            return '<tr class="feature-row" data-line-idx="' + lineIdx + '" style="display:none">' +
+                '<td colspan="10" class="bg-light p-2">' +
+                    '<div class="d-flex align-items-center mb-1">' +
+                        '<small class="text-muted mr-2"><i class="fas fa-tags mr-1"></i>Özellikler:</small>' +
+                        '<button type="button" class="btn btn-outline-primary btn-xs btn-add-feature"><i class="fas fa-plus mr-1"></i>Ekle</button>' +
+                    '</div>' +
+                    '<div class="features-container"></div>' +
+                '</td>' +
+                '</tr>';
+        }
+
+        function addFeatureEntry(container, lineIdx, defId, qty, unitPrice) {
+            var fi = container.find('.feature-entry').length;
+            var html = '<div class="feature-entry d-flex align-items-center mb-1">' +
+                buildFeatureSelect(defId || '') +
+                '<input type="number" class="form-control form-control-sm feature-qty ml-1" style="width:60px" placeholder="Adet" value="' + (qty || 1) + '" min="1" />' +
+                '<input type="hidden" class="feature-def-id" name="Lines[' + lineIdx + '].Features[' + fi + '].FeatureDefinitionId" value="' + (defId || '') + '" />' +
+                '<input type="hidden" class="feature-unit-price" name="Lines[' + lineIdx + '].Features[' + fi + '].UnitPrice" value="' + (unitPrice || 0) + '" />' +
+                '<input type="hidden" class="feature-qty-hidden" name="Lines[' + lineIdx + '].Features[' + fi + '].Quantity" value="' + (qty || 1) + '" />' +
+                '<span class="ml-2 small feature-line-total text-primary font-weight-bold">0.00</span>' +
+                '<button type="button" class="btn btn-outline-danger btn-xs ml-1 btn-remove-feature"><i class="fas fa-times"></i></button>' +
+                '</div>';
+            container.append(html);
+            // Hesapla
+            var entry = container.find('.feature-entry:last');
+            calcFeatureTotal(entry);
+        }
+
+        // Toggle features
+        $(document).on('click', '.btn-toggle-features', function() {
+            var lineRow = $(this).closest('.line-row');
+            var lineIdx = lineRow.data('line-idx');
+            var featureRow = lineRow.next('.feature-row');
+            if (!featureRow.length) {
+                featureRow = $(buildFeatureRow(lineIdx));
+                lineRow.after(featureRow);
+            }
+            featureRow.toggle();
+            $(this).toggleClass('btn-outline-secondary btn-secondary');
+        });
+
+        // Add feature entry
+        $(document).on('click', '.btn-add-feature', function() {
+            var featureRow = $(this).closest('.feature-row');
+            var lineIdx = featureRow.data('line-idx');
+            addFeatureEntry(featureRow.find('.features-container'), lineIdx);
+        });
+
+        // Feature select change
+        $(document).on('change', '.feature-select', function() {
+            var entry = $(this).closest('.feature-entry');
+            var defId = $(this).val();
+            var price = $(this).find(':selected').data('price') || 0;
+            entry.find('.feature-def-id').val(defId);
+            entry.find('.feature-unit-price').val(price);
+            calcFeatureTotal(entry);
+        });
+
+        // Feature qty change
+        $(document).on('input', '.feature-qty', function() {
+            var entry = $(this).closest('.feature-entry');
+            entry.find('.feature-qty-hidden').val($(this).val());
+            calcFeatureTotal(entry);
+        });
+
+        function calcFeatureTotal(entry) {
+            var price = parseFloat(entry.find('.feature-unit-price').val()) || 0;
+            var qty = parseInt(entry.find('.feature-qty').val()) || 0;
+            var total = price * qty;
+            entry.find('.feature-line-total').text(total.toFixed(2));
+            var featureRow = entry.closest('.feature-row');
+            var lineRow = featureRow.prev('.line-row');
+            if (lineRow.length) calcLineTotal(lineRow);
+        }
+
+        // Remove feature
+        $(document).on('click', '.btn-remove-feature', function() {
+            var featureRow = $(this).closest('.feature-row');
+            $(this).closest('.feature-entry').remove();
+            var lineIdx = featureRow.data('line-idx');
+            featureRow.find('.feature-entry').each(function(fi) {
+                $(this).find('.feature-def-id').attr('name', 'Lines[' + lineIdx + '].Features[' + fi + '].FeatureDefinitionId');
+                $(this).find('.feature-unit-price').attr('name', 'Lines[' + lineIdx + '].Features[' + fi + '].UnitPrice');
+                $(this).find('.feature-qty-hidden').attr('name', 'Lines[' + lineIdx + '].Features[' + fi + '].Quantity');
+            });
+            var lineRow = featureRow.prev('.line-row');
+            if (lineRow.length) calcLineTotal(lineRow);
+        });
+
+        function addLine(productId, recipeId, width, height, qty, price, pozNo, notes, features, lineId) {
+            var row = buildLineRow(lineIndex, productId, recipeId, width, height, qty, price, pozNo, notes, lineId);
+            $('#linesBody').append(row);
+            var $lineRow = $('#linesBody tr.line-row:last');
+            // Mevcut özellikler varsa ekle
+            if (features && features.length > 0) {
+                var featureRow = $(buildFeatureRow(lineIndex));
+                $lineRow.after(featureRow);
+                featureRow.show();
+                $lineRow.find('.btn-toggle-features').removeClass('btn-outline-secondary').addClass('btn-secondary');
+                features.forEach(function(f) {
+                    addFeatureEntry(featureRow.find('.features-container'), lineIndex, f.featureDefinitionId, f.quantity, f.unitPrice);
+                });
+            }
+            calcLineTotal($lineRow);
+            lineIndex++;
+        }
+
+        // Mevcut satırları yükle (line.Id korunur — ID-based update için)
+        @foreach (var line in Model.Lines)
+        {
+            <text>
+            addLine('@(line.ProductItemId?.ToString() ?? "")', '@(line.RecipeId?.ToString() ?? "")', '@(line.WidthMm?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")', '@(line.HeightMm?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")', @line.Quantity, @line.UnitPrice.ToString(System.Globalization.CultureInfo.InvariantCulture), '@(line.PozNo ?? "")', '@(line.Notes ?? "")', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(line.Features?.Select(f => new { featureDefinitionId = f.FeatureDefinitionId, quantity = f.Quantity, unitPrice = f.UnitPrice }) ?? Enumerable.Empty<object>())), @line.Id);
+            </text>
+        }
+
+        $('#btnAddLine').click(function() {
+            addLine('', '', '', '', 1, '', '', '', []);
+        });
+
+        function showPriceHistory(type, id) {
+            $('#priceHistoryBody').empty();
+            $('#priceHistoryEmpty').hide();
+            $('#priceHistoryModal').modal('show');
+            $.getJSON('@Url.Action("GetPriceHistory")', { type: type, id: id }, function(data) {
+                if (data.length === 0) {
+                    $('#priceHistoryEmpty').show();
+                    return;
+                }
+                data.forEach(function(h) {
+                    $('#priceHistoryBody').append(
+                        '<tr><td>' + h.orderNumber + '</td><td>' + h.orderDate + '</td><td>' + h.customerTitle +
+                        '</td><td>' + h.widthMm + '×' + h.heightMm + '</td><td>' + h.quantity +
+                        '</td><td class="text-right"><strong>' + parseFloat(h.unitPrice).toFixed(2) + '</strong></td></tr>'
+                    );
+                });
+            });
+        }
+
+        $(document).on('click', '.btn-price-history', function() {
+            var val = $(this).closest('td').find('.item-select').val();
+            if (val && val.startsWith('P_')) showPriceHistory('P', val.substring(2));
+            else if (val && val.startsWith('R_')) showPriceHistory('R', val.substring(2));
+        });
+
+        $(document).on('change', '.item-select', function() {
+            var val = $(this).val();
+            var td = $(this).closest('td');
+            var productInput = td.find('input[name$=".ProductItemId"]');
+            var recipeInput = td.find('input[name$=".RecipeId"]');
+            var histBtn = td.find('.btn-price-history');
+            productInput.val('');
+            recipeInput.val('');
+            if (val && val.startsWith('P_')) {
+                productInput.val(val.substring(2));
+                histBtn.show();
+            } else if (val && val.startsWith('R_')) {
+                recipeInput.val(val.substring(2));
+                histBtn.show();
+            } else {
+                histBtn.hide();
+            }
+        });
+
+        $(document).on('input', '.calc-input', function() {
+            calcLineTotal($(this).closest('tr'));
+        });
+
+        $(document).on('click', '.btn-remove-row', function() {
+            var row = $(this).closest('tr');
+            var featureRow = row.next('.feature-row');
+            if (featureRow.length) featureRow.remove();
+            row.remove();
+            calcGrandTotal();
+        });
+
+        // Excel import
+        var parsedLines = [];
+        $('#excelFile').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').html(fileName);
+            if (!fileName) return;
+            var formData = new FormData();
+            formData.append('file', this.files[0]);
+            $.ajax({
+                url: '@Url.Action("ImportExcel")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                success: function(res) {
+                    if (res.success) {
+                        parsedLines = res.lines;
+                        var matched = parsedLines.filter(function(l) { return l.isMatched; }).length;
+                        var total = parsedLines.length;
+                        $('#excelInfo').html('<strong>' + total + '</strong> satır okundu, <strong>' + matched + '</strong> tanesi eşleşti.');
+                        var errors = parsedLines.filter(function(l) { return !l.isMatched; });
+                        if (errors.length > 0) {
+                            var errHtml = errors.map(function(e) { return '<li>' + e.itemCode + ': ' + e.matchError + '</li>'; }).join('');
+                            $('#excelErrorList').html('<ul class="mb-0">' + errHtml + '</ul>');
+                            $('#excelErrors').show();
+                        } else {
+                            $('#excelErrors').hide();
+                        }
+                        $('#excelResult').show();
+                        $('#btnImportExcel').prop('disabled', matched === 0);
+                    } else {
+                        $('#excelInfo').html('<span class="text-danger">' + res.error + '</span>');
+                        $('#excelResult').show();
+                    }
+                }
+            });
+        });
+
+        $('#btnImportExcel').click(function() {
+            parsedLines.filter(function(l) { return l.isMatched; }).forEach(function(l) {
+                addLine(l.matchedProductItemId || '', l.matchedRecipeId || '', l.widthMm, l.heightMm, l.quantity, l.unitPrice, '', '', []);
+            });
+            $('#excelModal').modal('hide');
+            toastr.success(parsedLines.filter(function(l) { return l.isMatched; }).length + ' kalem aktarıldı.');
+        });
+
+        // Kısayol: Son satırda ↓ yeni kalem, Shift+↓ kopyala
+        $(document).on('keydown', function(e) {
+            if (e.key === 'ArrowDown' && !e.ctrlKey && !e.altKey) {
+                var $focused = $(document.activeElement);
+                if ($focused.closest('.feature-row').length || $focused.is('select')) return;
+                var $row = $focused.closest('#linesBody tr.line-row');
+                if (!$row.length) return;
+                var $lastLineRow = $('#linesBody tr.line-row:last');
+                if ($row.data('line-idx') === $lastLineRow.data('line-idx')) {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        copyLine($row);
+                    } else {
+                        $('#btnAddLine').click();
+                    }
+                    var inputClass = $focused.attr('name') ? $focused.attr('name').replace(/Lines\[\d+\]\./, '') : '';
+                    if (inputClass) {
+                        setTimeout(function() {
+                            var $newLastRow = $('#linesBody tr.line-row:last');
+                            $newLastRow.find('input[name$=".' + inputClass + '"]').focus();
+                        }, 50);
+                    }
+                }
+            }
+        });
+
+        function copyLine(sourceRow) {
+            var productVal = sourceRow.find('.item-select').val() || '';
+            var productId = sourceRow.find('input[name$=".ProductItemId"]').val() || '';
+            var recipeId = sourceRow.find('input[name$=".RecipeId"]').val() || '';
+            var w = sourceRow.find('input[name$=".WidthMm"]').val() || '';
+            var h = sourceRow.find('input[name$=".HeightMm"]').val() || '';
+            var qty = sourceRow.find('input[name$=".Quantity"]').val() || 1;
+            var price = sourceRow.find('input[name$=".UnitPrice"]').val() || '';
+            var pozNo = sourceRow.find('input[name$=".PozNo"]').val() || '';
+            var notes = sourceRow.find('input[name$=".Notes"]').val() || '';
+            addLine(productId, recipeId, w, h, qty, price, pozNo, notes, []);
+            var $newRow = $('#linesBody tr.line-row:last');
+            if (productVal) $newRow.find('.item-select').val(productVal);
+            calcLineTotal($newRow);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        //  FORM SUBMIT - İndeksleri sıfırla
+        // ═══════════════════════════════════════════════════════
+        var formSubmitting = false;
+
+        var hasApprovedDelivery = @((ViewBag.HasApprovedDelivery == true).ToString().ToLower());
+
+        // Güncelle butonuna tıklayınca SweetAlert onay sor
+        $('#btnUpdate').on('click', function() {
+            if (formSubmitting) return; // Zaten gönderiliyorsa çift tıklamayı engelle
+            var swalOpts = {
+                title: 'Siparişi Güncelle',
+                text: 'Sipariş güncellenecek, emin misiniz?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check mr-1"></i> Evet, Güncelle',
+                cancelButtonText: '<i class="fas fa-times mr-1"></i> Vazgeç'
+            };
+            if (hasApprovedDelivery) {
+                swalOpts.icon = 'warning';
+                swalOpts.title = 'Dikkat: Onaylı Teslimat Var!';
+                swalOpts.html = '<div class="text-left">' +
+                    '<p>Bu siparişe ait <strong>onaylı teslimat belgesi</strong> mevcut.</p>' +
+                    '<p>Düzenleme sonrası teslimat satırları otomatik uyumlu hale getirilecek:</p>' +
+                    '<ul class="text-muted small">' +
+                    '<li>Bir kalemi silersen → teslimattaki o satır da silinecek</li>' +
+                    '<li>Bir kalemin adedini düşürürsen → teslimat miktarı da düşürülecek (sipariş miktarını aşamaz)</li>' +
+                    '</ul>' +
+                    '<p class="mb-0"><strong>Devam edilsin mi?</strong></p>' +
+                    '</div>';
+                delete swalOpts.text;
+            }
+            Swal.fire(swalOpts).then(function(result) {
+                if (result.isConfirmed) {
+                    formSubmitting = true;
+                    // Butonu kilitle
+                    $('#btnUpdate').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Güncelleniyor...');
+                    // Autosave'i durdur
+                    if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+                    // Formu gönder
+                    $('#orderForm').submit();
+                }
+            });
+        });
+
+        $('#orderForm').on('submit', function(e) {
+            // Autosave zamanlayıcısını iptal et — çift kayıt engelle
+            if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+
+            // Autosave devam ediyorsa submit'i geciktir
+            if (isSaving) {
+                e.preventDefault();
+                var self = this;
+                var waitInterval = setInterval(function() {
+                    if (!isSaving) {
+                        clearInterval(waitInterval);
+                        formSubmitting = true;
+                        self.submit();
+                    }
+                }, 200);
+                return false;
+            }
+            formSubmitting = true;
+
+            // Satır indekslerini sıralı hale getir (0, 1, 2, ...)
+            $('#linesBody tr.line-row').each(function(i) {
+                $(this).find('input, select').each(function() {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        $(this).attr('name', name.replace(/Lines\[\d+\]/, 'Lines[' + i + ']'));
+                    }
+                });
+                // Feature satırını da güncelle
+                var featureRow = $(this).next('.feature-row');
+                if (featureRow.length) {
+                    featureRow.find('input').each(function() {
+                        var name = $(this).attr('name');
+                        if (name) {
+                            $(this).attr('name', name.replace(/Lines\[\d+\]/, 'Lines[' + i + ']'));
+                        }
+                    });
+                }
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════
+        //  OTOMATİK KAYDETME - Her değişiklikte debounce ile
+        // ═══════════════════════════════════════════════════════
+        var autoSaveTimer = null;
+        var isSaving = false;
+        var orderId = @Model.Id;
+
+        function collectFormData() {
+            var data = {
+                id: orderId,
+                customerId: parseInt($('[name="CustomerId"]').val()) || 0,
+                orderDate: $('[name="OrderDate"]').val(),
+                deliveryDate: $('[name="DeliveryDate"]').val() || null,
+                currency: $('[name="Currency"]').val(),
+                taxRate: parseInt($('[name="TaxRate"]').val()) || 0,
+                notes: $('[name="Notes"]').val() || null,
+                orderCustomerName: $('[name="OrderCustomerName"]').val() || null,
+                lines: []
+            };
+            $('#linesBody tr.line-row').each(function() {
+                var $row = $(this);
+                var pid = $row.find('input[name$=".ProductItemId"]').val();
+                var rid = $row.find('input[name$=".RecipeId"]').val();
+                if (!pid && !rid) return; // Ürün seçilmemiş kalem atla
+                var lineData = {
+                    id: parseInt($row.find('input[name$=".Id"]').val()) || 0,
+                    productItemId: pid ? parseInt(pid) : null,
+                    recipeId: rid ? parseInt(rid) : null,
+                    pozNo: $row.find('input[name$=".PozNo"]').val() || null,
+                    widthMm: $row.find('input[name$=".WidthMm"]').val() ? parseFloat($row.find('input[name$=".WidthMm"]').val()) : null,
+                    heightMm: $row.find('input[name$=".HeightMm"]').val() ? parseFloat($row.find('input[name$=".HeightMm"]').val()) : null,
+                    quantity: parseInt($row.find('input[name$=".Quantity"]').val()) || 1,
+                    unitPrice: parseFloat($row.find('input[name$=".UnitPrice"]').val()) || 0,
+                    notes: $row.find('input[name$=".Notes"]').val() || null,
+                    features: []
+                };
+                var featureRow = $row.next('.feature-row');
+                if (featureRow.length) {
+                    featureRow.find('.feature-entry').each(function() {
+                        var defId = $(this).find('.feature-def-id').val();
+                        if (defId) {
+                            lineData.features.push({
+                                featureDefinitionId: parseInt(defId),
+                                quantity: parseInt($(this).find('.feature-qty').val()) || 1,
+                                unitPrice: parseFloat($(this).find('.feature-unit-price').val()) || 0
+                            });
+                        }
+                    });
+                }
+                data.lines.push(lineData);
+            });
+            return data;
+        }
+
+        function triggerAutoSave() {
+            if (formSubmitting) return; // Form submit başladıysa autosave tetikleme
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(doAutoSave, 1500);
+        }
+
+        function doAutoSave() {
+            if (isSaving || formSubmitting) return;
+            var data = collectFormData();
+            if (data.customerId <= 0) return;
+            isSaving = true;
+            $('#autoSaveStatus').html('<i class="fas fa-spinner fa-spin mr-1"></i>Kaydediliyor...');
+            $.ajax({
+                url: '@Url.Action("UpdateDraft")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                success: function(res) {
+                    if (res.success) {
+                        var now = new Date();
+                        var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+                        $('#autoSaveStatus').html('<i class="fas fa-check text-success mr-1"></i>Kaydedildi (' + timeStr + ')');
+                    }
+                },
+                error: function() {
+                    $('#autoSaveStatus').html('<i class="fas fa-exclamation-triangle text-danger mr-1"></i>Kayıt hatası');
+                },
+                complete: function() { isSaving = false; }
+            });
+        }
+
+        // Her input/change olayında auto-save tetikle
+        $(document).on('input change', '#orderForm input, #orderForm select, #orderForm textarea', function() {
+            triggerAutoSave();
+        });
+
+        // Satır ekleme/silme
+        $(document).on('click', '.btn-remove-row, .btn-remove-feature, .btn-add-feature', function() {
+            setTimeout(triggerAutoSave, 100);
+        });
+    });
+    </script>
+}

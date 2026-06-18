@@ -1,0 +1,60 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Sales.DeliveryDto>
+@{
+    ViewData["Title"] = "Teslimat Belgeleri";
+    ViewData["Breadcrumb"] = "Satış";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-truck mr-2"></i>Teslimat Belgeleri</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Teslimat
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblDeliveries" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Teslimat No</th>
+                    <th>Tarih</th>
+                    <th>Sipariş No</th>
+                    <th>Müşteri</th>
+                    <th class="text-center">Kalem</th>
+                    <th class="text-right">Toplam Adet</th>
+                    <th class="text-right">Toplam m²</th>
+                    <th>Durum</th>
+                    <th style="width:100px">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td><strong>@d.DeliveryNumber</strong></td>
+                        <td data-order="@d.DeliveryDate.ToString("yyyy-MM-dd")">@d.DeliveryDate.ToString("dd.MM.yyyy")</td>
+                        <td>@d.OrderNumber</td>
+                        <td>@d.CustomerTitle</td>
+                        <td class="text-center">@d.LineCount</td>
+                        <td class="text-right">@d.TotalQuantity</td>
+                        <td class="text-right">@d.TotalAreaM2.ToString("N2")</td>
+                        <td><span class="badge @d.StatusBadgeClass">@d.StatusDisplay</span></td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@d.Id" class="btn btn-info btn-xs" title="Detay">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@d.Id" class="btn btn-warning btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblDeliveries').DataTable({ "order": [[1, "desc"]], "pageLength": 25 }); });</script>
+}

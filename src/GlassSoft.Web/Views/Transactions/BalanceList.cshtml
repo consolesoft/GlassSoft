@@ -1,0 +1,120 @@
+@model List<GlassSoft.Web.Controllers.TransactionsController.CustomerBalanceRow>
+@{
+    ViewData["Title"] = "Cari Bakiye Listesi";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="info-box bg-danger">
+            <span class="info-box-icon"><i class="fas fa-arrow-up"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Toplam Borç (Bize Borçlu)</span>
+                <span class="info-box-number">@(((decimal)ViewBag.ToplamBorc).ToString("N2")) TL</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-box bg-success">
+            <span class="info-box-icon"><i class="fas fa-arrow-down"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Toplam Alacak (Bizim Borcumuz)</span>
+                <span class="info-box-number">@(((decimal)ViewBag.ToplamAlacak).ToString("N2")) TL</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-box bg-info">
+            <span class="info-box-icon"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Aktif Cari Sayısı</span>
+                <span class="info-box-number">@Model.Count</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-balance-scale mr-2"></i>Cari Bakiye Listesi</h3>
+        <div class="card-tools">
+            @{
+                var templateId = (int)ViewBag.PrintTemplateId;
+            }
+            @if (templateId > 0)
+            {
+                <a href="@Url.Action("Render", "Output", new { type = (int)GlassSoft.Domain.Enums.OutputType.CariBakiyeListesi, entityId = 0, templateId = templateId })" target="_blank" class="btn btn-info btn-sm">
+                    <i class="fas fa-print mr-1"></i> Çıktı Al
+                </a>
+            }
+            <button class="btn btn-secondary btn-sm ml-1" onclick="window.print()">
+                <i class="fas fa-print mr-1"></i> Sayfayı Yazdır
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="get" class="form-inline mb-3">
+            <label class="mr-2">Bakiye Filtre:</label>
+            @Html.DropDownList("balanceFilter", (SelectList)ViewBag.FilterList, new { @class = "form-control no-select2 mr-2" })
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i> Filtrele</button>
+        </form>
+
+        <table id="tbl" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Cari Ünvan</th>
+                    <th class="text-right">Bakiye (TL)</th>
+                    <th>Yön</th>
+                    <th style="width:80px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td><small class="text-muted">@c.CustomerCode</small></td>
+                        <td><strong>@c.CustomerTitle</strong></td>
+                        <td class="text-right @(c.Balance > 0 ? "text-danger" : c.Balance < 0 ? "text-success" : "")">
+                            <strong>@Math.Abs(c.Balance).ToString("N2")</strong>
+                        </td>
+                        <td>
+                            @if (c.Balance > 0)
+                            {
+                                <span class="badge badge-danger">Borç</span>
+                            }
+                            else if (c.Balance < 0)
+                            {
+                                <span class="badge badge-success">Alacak</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Sıfır</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Index" asp-route-customerId="@c.CustomerId" class="btn btn-info btn-xs" title="Hareketleri Gör">
+                                <i class="fas fa-list"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" class="text-right"><strong>TOPLAM:</strong></td>
+                    <td class="text-right">
+                        <span class="text-danger">Borç: @(((decimal)ViewBag.ToplamBorc).ToString("N2"))</span>
+                        <br />
+                        <span class="text-success">Alacak: @(((decimal)ViewBag.ToplamAlacak).ToString("N2"))</span>
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tbl').DataTable({ "order": [[2, "desc"]], "pageLength": 50 }); });</script>
+}

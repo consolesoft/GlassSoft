@@ -1,0 +1,12 @@
+@model string
+@{
+    Layout = "~/Views/Shared/_PrintLayout.cshtml";
+    ViewData["Title"] = ViewData["DocumentTitle"]?.ToString() ?? "Çıktı";
+}
+
+@Html.Raw(Model)
+
+@if (ViewData["AutoPrint"] != null)
+{
+    <script>window.onload = function() { window.print(); }</script>
+}

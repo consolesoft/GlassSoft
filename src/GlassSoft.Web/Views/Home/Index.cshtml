@@ -1,0 +1,156 @@
+@using GlassSoft.Web.Controllers
+@{
+    ViewData["Title"] = "Dashboard";
+    var activeOrders = (int)ViewBag.ActiveOrders;
+    var productionCount = (int)ViewBag.ProductionCount;
+    var customerCount = (int)ViewBag.CustomerCount;
+    var recentOrders = (List<RecentOrderViewModel>)ViewBag.RecentOrders;
+}
+
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@activeOrders</h3>
+                <p>Aktif Siparişler</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <a asp-controller="Orders" asp-action="Index" class="small-box-footer">Detay <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@productionCount</h3>
+                <p>Üretimde</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-industry"></i>
+            </div>
+            <a asp-controller="WorkOrders" asp-action="Index" class="small-box-footer">Detay <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>@customerCount</h3>
+                <p>Müşteriler</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <a asp-controller="Customers" asp-action="Index" class="small-box-footer">Detay <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3><i class="fas fa-gem" style="font-size: 1.8rem;"></i></h3>
+                <p>GLASSOFT ERP</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <a href="#" class="small-box-footer">v1.0.0 <i class="fas fa-info-circle"></i></a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Son Siparişler</h3>
+                <div class="card-tools">
+                    <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-xs">
+                        <i class="fas fa-plus mr-1"></i> Yeni Sipariş
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table m-0">
+                        <thead>
+                            <tr>
+                                <th>Sipariş No</th>
+                                <th>Müşteri</th>
+                                <th class="text-right">Tutar</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (recentOrders.Any())
+                            {
+                                @foreach (var order in recentOrders)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id">
+                                                <strong>@order.OrderNumber</strong>
+                                            </a>
+                                        </td>
+                                        <td>@order.CustomerTitle</td>
+                                        <td class="text-right">@order.TotalAmount.ToString("N2") @order.Currency</td>
+                                        <td><span class="badge @order.StatusBadge">@order.StatusText</span></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                        Henüz sipariş bulunmuyor
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Hızlı İşlemler</h3>
+            </div>
+            <div class="card-body">
+                <a asp-controller="Orders" asp-action="Create" class="btn btn-info btn-block mb-2">
+                    <i class="fas fa-shopping-cart mr-1"></i> Yeni Sipariş
+                </a>
+                <a asp-controller="WorkOrders" asp-action="Create" class="btn btn-success btn-block mb-2">
+                    <i class="fas fa-industry mr-1"></i> Yeni İş Emri
+                </a>
+                <a asp-controller="Customers" asp-action="Create" class="btn btn-warning btn-block mb-2">
+                    <i class="fas fa-user-plus mr-1"></i> Yeni Müşteri
+                </a>
+                <a asp-controller="Recipes" asp-action="Create" class="btn btn-secondary btn-block">
+                    <i class="fas fa-layer-group mr-1"></i> Yeni Reçete
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Sistem Bilgisi</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-box bg-dark mb-0">
+                    <span class="info-box-icon"><i class="fas fa-gem"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">GLASSOFT ERP</span>
+                        <span class="info-box-number">v1.0.0</span>
+                        <span class="small text-muted">ConsoleSoft</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

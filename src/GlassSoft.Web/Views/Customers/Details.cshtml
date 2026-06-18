@@ -1,0 +1,270 @@
+@model GlassSoft.Application.DTOs.Sales.CustomerDto
+@{
+    ViewData["Title"] = $"Cari - {Model.Title}";
+    ViewData["Breadcrumb"] = "Cari Yönetimi";
+    var balance = (decimal)ViewBag.Balance;
+    var transactions = ViewBag.Transactions as IEnumerable<GlassSoft.Application.DTOs.Accounting.AccountTransactionDto>;
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@Html.Raw(Html.Encode(TempData["Error"]).Replace("'", "\\'"))', 'Hata', { timeOut: 8000 }); });</script>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Müşteri Bilgileri -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user mr-2"></i>@Model.Title</h3>
+                <div class="card-tools">
+                    <span class="badge @(Model.IsActive ? "badge-success" : "badge-secondary")">
+                        @(Model.IsActive ? "Aktif" : "Pasif")
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3"><strong>Cari Kodu:</strong></div>
+                    <div class="col-md-3">@Model.Code</div>
+                    <div class="col-md-3"><strong>Cari Türü:</strong></div>
+                    <div class="col-md-3"><span class="badge @Model.CustomerTypeBadgeClass">@Model.CustomerTypeDisplay</span></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Vergi No:</strong></div>
+                    <div class="col-md-3">@(Model.TaxNumber ?? "-")</div>
+                    <div class="col-md-3"><strong>Vergi Dairesi:</strong></div>
+                    <div class="col-md-3">@(Model.TaxOffice ?? "-")</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Şehir:</strong></div>
+                    <div class="col-md-3">@(Model.City ?? "-")</div>
+                    <div class="col-md-3"><strong>Para Birimi:</strong></div>
+                    <div class="col-md-3"><span class="badge badge-info">@Model.Currency</span></div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Telefon:</strong></div>
+                    <div class="col-md-3">@(Model.Phone ?? "-")</div>
+                    <div class="col-md-3"><strong>E-posta:</strong></div>
+                    <div class="col-md-3">@(Model.Email ?? "-")</div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Address))
+                {
+                    <div class="row mt-2">
+                        <div class="col-md-3"><strong>Adres:</strong></div>
+                        <div class="col-md-9">@Model.Address</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Cari Hareketler -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-exchange-alt mr-2"></i>Son Cari Hareketler</h3>
+                <div class="card-tools">
+                    <a asp-controller="Transactions" asp-action="Index" asp-route-customerId="@Model.Id" class="btn btn-info btn-sm">
+                        <i class="fas fa-list mr-1"></i> Tümünü Gör
+                    </a>
+                    <a asp-controller="Transactions" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-primary btn-sm ml-1">
+                        <i class="fas fa-plus mr-1"></i> Yeni Hareket
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-bordered table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Tür</th>
+                            <th>Ödeme Tipi</th>
+                            <th>Tutar</th>
+                            <th>TRY</th>
+                            <th>Açıklama</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (transactions != null)
+                        {
+                            @foreach (var t in transactions.Take(20))
+                            {
+                                <tr>
+                                    <td>@t.TransactionDate.ToString("dd.MM.yyyy")</td>
+                                    <td><span class="badge @t.TypeBadgeClass">@t.TypeDisplay</span></td>
+                                    <td>@t.PaymentTypeDisplay</td>
+                                    <td class="text-right">@t.Amount.ToString("N2") @t.Currency</td>
+                                    <td class="text-right"><strong>@t.AmountTRY.ToString("N2")</strong></td>
+                                    <td>@(t.Description ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Bakiye -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-balance-scale mr-2"></i>Cari Bakiye</h3>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="@(balance >= 0 ? "text-danger" : "text-success")">
+                    @balance.ToString("N2") TRY
+                </h2>
+                <p class="text-muted">@(balance >= 0 ? "Müşteri Borçlu" : "Müşteri Alacaklı")</p>
+            </div>
+        </div>
+
+        <!-- Yazdır -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-print mr-2"></i>Çıktılar</h3>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-info btn-block mb-2" onclick="openPrintModal(@((int)GlassSoft.Domain.Enums.OutputType.CariHareketleri), @Model.Id)">
+                    <i class="fas fa-file-alt mr-1"></i> Cari Hareket Raporu
+                </button>
+                <button class="btn btn-info btn-block" onclick="openPrintModal(@((int)GlassSoft.Domain.Enums.OutputType.CariEkstre), @Model.Id)">
+                    <i class="fas fa-file-invoice mr-1"></i> Hesap Ekstresi
+                </button>
+            </div>
+        </div>
+
+        <!-- Aksiyonlar -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Aksiyonlar</h3>
+            </div>
+            <div class="card-body">
+                <a asp-controller="Transactions" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-primary btn-block mb-2">
+                    <i class="fas fa-plus mr-1"></i> Yeni Cari Hareket
+                </a>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block mb-2">
+                    <i class="fas fa-edit mr-1"></i> Düzenle
+                </a>
+                <button type="button" class="btn btn-danger btn-block mb-2 btn-delete-customer" data-id="@Model.Id" data-title="@Model.Title">
+                    <i class="fas fa-trash mr-1"></i> Cariyi Sil
+                </button>
+            </div>
+        </div>
+
+        <a asp-action="Index" class="btn btn-secondary btn-block"><i class="fas fa-arrow-left mr-1"></i> Listeye Dön</a>
+    </div>
+</div>
+
+@await Html.PartialAsync("_PrintModal")
+
+<form style="display:none">@Html.AntiForgeryToken()</form>
+
+@section Scripts {
+<script>
+$(document).ready(function () {
+    var csrfToken = $('input[name="__RequestVerificationToken"]').first().val();
+
+    $('.btn-delete-customer').on('click', function () {
+        var id = $(this).data('id');
+        var title = $(this).data('title');
+        deleteCustomerFlow(id, title);
+    });
+
+    function deleteCustomerFlow(id, title) {
+        $.get('@Url.Action("GetReferences", "Customers")', { id: id })
+            .done(function (refs) {
+                if (!refs.hasAnyReference) {
+                    Swal.fire({
+                        title: 'Cariyi sil?',
+                        html: '<b>' + title + '</b> adlı cariyi silmek istediğinize emin misiniz?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Evet, sil',
+                        cancelButtonText: 'Vazgeç',
+                        confirmButtonColor: '#dc3545'
+                    }).then(function (r) {
+                        if (r.isConfirmed) submitForm('@Url.Action("Delete", "Customers")', id);
+                    });
+                } else {
+                    forceDeleteStep1(id, title, refs);
+                }
+            })
+            .fail(function () {
+                toastr.error('Cari bilgileri alınamadı.');
+            });
+    }
+
+    function forceDeleteStep1(id, title, refs) {
+        var detail =
+            '<ul class="text-left" style="display:inline-block">' +
+            '<li><b>' + refs.orderCount + '</b> sipariş</li>' +
+            '<li><b>' + refs.purchaseOrderCount + '</b> satın alma</li>' +
+            '<li><b>' + refs.accountTransactionCount + '</b> cari hareket</li>' +
+            '<li><b>' + refs.chequeNoteCount + '</b> çek/senet</li>' +
+            '<li><b>' + refs.cashTransactionCount + '</b> kasa/gider hareketi</li>' +
+            '</ul>';
+
+        Swal.fire({
+            title: '⚠️ UYARI: Bağlı Kayıtlar Var',
+            html: '<b>' + title + '</b> adlı cariye ait aşağıdaki kayıtlar var:<br>' + detail +
+                  '<br><b class="text-danger">Bu kayıtlar da silinecek!</b><br>Devam etmek istiyor musunuz?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Devam Et',
+            cancelButtonText: 'Vazgeç',
+            confirmButtonColor: '#dc3545'
+        }).then(function (r) {
+            if (r.isConfirmed) forceDeleteStep2(id, title);
+        });
+    }
+
+    function forceDeleteStep2(id, title) {
+        Swal.fire({
+            title: '🚨 İKİNCİ UYARI',
+            html: '<b class="text-danger">BU İŞLEM GERİ ALINAMAZ!</b><br><br>' +
+                  '<b>' + title + '</b> ve tüm bağlı kayıtları (siparişler, satın almalar, cari hareketler, kasa hareketleri, çek/senetler) <b>kalıcı olarak silinecek</b>.<br><br>' +
+                  'Gerçekten devam etmek istiyor musunuz?',
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonText: 'Evet, devam et',
+            cancelButtonText: 'Hayır, vazgeç',
+            confirmButtonColor: '#dc3545'
+        }).then(function (r) {
+            if (r.isConfirmed) forceDeleteStep3(id, title);
+        });
+    }
+
+    function forceDeleteStep3(id, title) {
+        Swal.fire({
+            title: '🔥 SON ONAY',
+            html: 'Son kez soruyoruz: <b>' + title + '</b> ve tüm hareketleri <b class="text-danger">TAMAMEN SİLİNECEK</b>.<br><br>' +
+                  'Onaylamak için aşağıya <b>SİL</b> yazın:',
+            icon: 'warning',
+            input: 'text',
+            inputPlaceholder: 'SİL',
+            showCancelButton: true,
+            confirmButtonText: 'Kalıcı olarak sil',
+            cancelButtonText: 'Vazgeç',
+            confirmButtonColor: '#dc3545',
+            inputValidator: function (value) {
+                if (value !== 'SİL') return 'Onaylamak için büyük harflerle "SİL" yazmalısınız.';
+            }
+        }).then(function (r) {
+            if (r.isConfirmed) submitForm('@Url.Action("ForceDelete", "Customers")', id);
+        });
+    }
+
+    function submitForm(url, id) {
+        var $form = $('<form>', { method: 'POST', action: url });
+        $form.append($('<input>', { type: 'hidden', name: 'id', value: id }));
+        $form.append($('<input>', { type: 'hidden', name: '__RequestVerificationToken', value: csrfToken }));
+        $('body').append($form);
+        $form.submit();
+    }
+});
+</script>
+}

@@ -1,0 +1,151 @@
+@model GlassSoft.Application.DTOs.Accounting.ExpenseUpdateDto
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Gider Düzenle";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Gider Düzenle</h3>
+            </div>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Title">Gider Başlığı <span class="text-danger">*</span></label>
+                                <input asp-for="Title" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Category">Kategori <span class="text-danger">*</span></label>
+                                <select asp-for="Category" class="form-control" required>
+                                    <option value="0">Kira</option>
+                                    <option value="1">Fatura</option>
+                                    <option value="2">Maaş</option>
+                                    <option value="3">Malzeme</option>
+                                    <option value="4">Nakliye</option>
+                                    <option value="5">Bakım/Onarım</option>
+                                    <option value="6">Vergi/Harç</option>
+                                    <option value="7">Sigorta</option>
+                                    <option value="8">Reklam/Pazarlama</option>
+                                    <option value="9">Diğer</option>
+                                    <option value="10">Yakıt</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="ExpenseDate">Tarih <span class="text-danger">*</span></label>
+                                <input asp-for="ExpenseDate" type="date" class="form-control" value="@Model.ExpenseDate.ToString("yyyy-MM-dd")" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Amount">Tutar <span class="text-danger">*</span></label>
+                                <input asp-for="Amount" type="number" step="0.01" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Currency">Para Birimi</label>
+                                <select asp-for="Currency" class="form-control" id="currencySelect">
+                                    <option value="TRY">TRY - Türk Lirası</option>
+                                    <option value="USD">USD - Amerikan Doları</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="ExchangeRate">Döviz Kuru</label>
+                                <input asp-for="ExchangeRate" type="number" step="0.0001" class="form-control" id="exchangeRateInput" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="PaymentType">Ödeme Tipi</label>
+                                <select asp-for="PaymentType" class="form-control" required>
+                                    <option value="0">Nakit</option>
+                                    <option value="1">Havale</option>
+                                    <option value="2">Çek</option>
+                                    <option value="3">Senet</option>
+                                    <option value="4">Kredi Kartı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="ReceiptNo">Fiş/Fatura No</label>
+                                <input asp-for="ReceiptNo" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Kasa <span class="text-danger">*</span></label>
+                                @{
+                                    var currentCashId = ViewBag.CurrentCashRegisterId as int?;
+                                }
+                                <select name="cashRegisterId" class="form-control no-select2" required>
+                                    <option value="">-- Kasa Seçiniz (Zorunlu) --</option>
+                                    @if (ViewBag.CashRegisters != null)
+                                    {
+                                        foreach (var item in (SelectList)ViewBag.CashRegisters)
+                                        {
+                                            var isSelected = currentCashId.HasValue && item.Value == currentCashId.Value.ToString();
+                                            if (isSelected)
+                                            {
+                                                <option value="@item.Value" selected>@item.Text</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@item.Value">@item.Text</option>
+                                            }
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Description">Açıklama</label>
+                                <textarea asp-for="Description" class="form-control" rows="1"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Güncelle</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        function toggleExchangeRate() {
+            var currency = $('#currencySelect').val();
+            if (currency === 'TRY') {
+                $('#exchangeRateInput').val('1').prop('readonly', true);
+            } else {
+                $('#exchangeRateInput').prop('readonly', false);
+            }
+        }
+        $('#currencySelect').on('change', toggleExchangeRate);
+        toggleExchangeRate();
+    });
+    </script>
+}

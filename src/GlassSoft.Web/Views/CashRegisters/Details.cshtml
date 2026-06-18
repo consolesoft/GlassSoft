@@ -1,0 +1,207 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Accounting.CashTransactionDto>
+@{
+    var register = ViewBag.Register as GlassSoft.Application.DTOs.Accounting.CashRegisterDto;
+    ViewData["Title"] = register?.Name ?? "Kasa Detayı";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+    var startDate = ViewBag.StartDate as string;
+    var endDate = ViewBag.EndDate as string;
+    var filterType = ViewBag.FilterType as string;
+    var isFiltered = !string.IsNullOrEmpty(startDate) || !string.IsNullOrEmpty(filterType);
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<!-- Kasa Bilgileri -->
+@if (register != null)
+{
+    <div class="callout callout-success">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5><i class="fas fa-cash-register mr-2"></i>@register.Name</h5>
+                <p class="mb-0">
+                    Bakiye: <strong class="@(register.Balance >= 0 ? "text-success" : "text-danger")" style="font-size:1.3em">
+                        @register.Balance.ToString("N2") @register.Currency
+                    </strong>
+                    <span class="badge badge-info ml-2">@register.TransactionCount işlem</span>
+                </p>
+            </div>
+            <div>
+                <form asp-action="CarryForward" method="post" style="display:inline"
+                      onsubmit="return confirm('Kasa devir işlemi yapılacak. Önceki günün bakiyesi bugüne devredilecek. Devam etmek istiyor musunuz?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="registerId" value="@register.Id" />
+                    <button type="submit" class="btn btn-warning btn-sm mr-1" title="Gün sonu devir">
+                        <i class="fas fa-redo mr-1"></i> Devir Yap
+                    </button>
+                </form>
+                <a asp-action="AddTransaction" asp-route-registerId="@register.Id" class="btn btn-success btn-sm mr-1">
+                    <i class="fas fa-plus mr-1"></i> İşlem Ekle
+                </a>
+                <a asp-action="Edit" asp-route-id="@register.Id" class="btn btn-warning btn-sm mr-1">
+                    <i class="fas fa-edit mr-1"></i> Düzenle
+                </a>
+                <form asp-action="Delete" asp-route-id="@register.Id" method="post" id="registerDeleteForm" style="display:inline">
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-danger btn-sm mr-1" id="btnRegisterDelete">
+                        <i class="fas fa-trash mr-1"></i> Kasayı Sil
+                    </button>
+                </form>
+                <a asp-action="Index" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Kasalara Dön
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Filtre -->
+<div class="card @(isFiltered ? "" : "collapsed-card")">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtre</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-@(isFiltered ? "minus" : "plus")"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body" @(isFiltered ? "" : "style=display:none")>
+        <form method="get" class="form-inline flex-wrap">
+            <input type="hidden" name="id" value="@register?.Id" />
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Başlangıç:</label>
+                <input type="date" name="startDate" class="form-control form-control-sm" value="@startDate" />
+            </div>
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Bitiş:</label>
+                <input type="date" name="endDate" class="form-control form-control-sm" value="@endDate" />
+            </div>
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Tür:</label>
+                @Html.DropDownList("filterType", new SelectList(new[] {
+                    new { Value = "", Text = "Tümü" },
+                    new { Value = "Giris", Text = "Sadece Giriş" },
+                    new { Value = "Cikis", Text = "Sadece Çıkış" }
+                }, "Value", "Text", filterType ?? ""),
+                new { @class = "form-control form-control-sm no-select2" })
+            </div>
+            <button type="submit" class="btn btn-info btn-sm mr-2 mb-2"><i class="fas fa-search mr-1"></i> Filtrele</button>
+            <a asp-action="Details" asp-route-id="@register?.Id" class="btn btn-secondary btn-sm mb-2"><i class="fas fa-times mr-1"></i> Temizle</a>
+        </form>
+    </div>
+</div>
+
+<!-- Giriş/Çıkış Özeti -->
+<div class="row">
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@Model.Where(t => t.Type == GlassSoft.Domain.Enums.CashTransactionType.Giris).Sum(t => t.Amount).ToString("N2")</h3>
+                <p>Toplam Giriş @(isFiltered ? "(Filtrelenmiş)" : "")</p>
+            </div>
+            <div class="icon"><i class="fas fa-arrow-down"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>@Model.Where(t => t.Type == GlassSoft.Domain.Enums.CashTransactionType.Cikis).Sum(t => t.Amount).ToString("N2")</h3>
+                <p>Toplam Çıkış @(isFiltered ? "(Filtrelenmiş)" : "")</p>
+            </div>
+            <div class="icon"><i class="fas fa-arrow-up"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-12">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@Model.Count()</h3>
+                <p>İşlem Sayısı @(isFiltered ? "(Filtrelenmiş)" : "")</p>
+            </div>
+            <div class="icon"><i class="fas fa-list"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- İşlem Listesi -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-exchange-alt mr-2"></i>Kasa İşlemleri</h3>
+        <div class="card-tools">
+            <a asp-action="AddTransaction" asp-route-registerId="@register?.Id" class="btn btn-success btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni İşlem
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblCashTransactions" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Tür</th>
+                    <th>Ödeme Tipi</th>
+                    <th>Tutar</th>
+                    <th>Bakiye</th>
+                    <th>Açıklama</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="@(item.ReferenceType == "CarryForward" ? "table-warning" : "")">
+                        <td data-order="@item.TransactionDate.ToString("yyyy-MM-dd HH:mm")">@item.TransactionDate.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            @if (item.ReferenceType == "CarryForward")
+                            {
+                                <span class="badge badge-warning"><i class="fas fa-redo mr-1"></i>Devir</span>
+                            }
+                            else
+                            {
+                                <span class="badge @item.TypeBadgeClass">@item.TypeDisplay</span>
+                            }
+                        </td>
+                        <td>@item.PaymentTypeDisplay</td>
+                        <td class="text-right">
+                            <strong class="@(item.Type == GlassSoft.Domain.Enums.CashTransactionType.Giris ? "text-success" : "text-danger")">
+                                @(item.Type == GlassSoft.Domain.Enums.CashTransactionType.Giris ? "+" : "-")@item.Amount.ToString("N2")
+                            </strong>
+                        </td>
+                        <td class="text-right"><strong>@item.RunningBalance.ToString("N2")</strong></td>
+                        <td>@(item.Description ?? "-")</td>
+                        <td>
+                            <form asp-action="DeleteTransaction" method="post" style="display:inline"
+                                  onsubmit="return confirm('Bu işlemi silmek istediğinize emin misiniz? Kasa bakiyesi güncellenecektir.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <input type="hidden" name="registerId" value="@register?.Id" />
+                                <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#tblCashTransactions').DataTable({ "order": [[0, "desc"]], "pageLength": 25 });
+
+            $('#btnRegisterDelete').on('click', function() {
+                Swal.fire({
+                    title: 'Kasa silinsin mi?',
+                    html: '<b>@register?.Name</b> kasasını silmek istediğinize emin misiniz?<br/><small class="text-muted">Bu kasaya ait işlemler varsa silme başarısız olacaktır.</small>',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Evet, sil',
+                    cancelButtonText: 'Vazgeç',
+                    confirmButtonColor: '#dc3545'
+                }).then(function(r) { if (r.isConfirmed) $('#registerDeleteForm').submit(); });
+            });
+        });
+    </script>
+}

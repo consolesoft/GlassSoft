@@ -1,0 +1,88 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Product.ProductItemDto>
+@{
+    ViewData["Title"] = "Ürünler";
+    ViewData["Breadcrumb"] = "Ürün & Stok";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-boxes mr-2"></i>Ürünler</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Ürün
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblProducts" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Ürün Adı</th>
+                    <th>Grup</th>
+                    <th>Birim</th>
+                    <th>Birim Fiyat</th>
+                    <th>Kalınlık</th>
+                    <th>Plaka</th>
+                    <th>Durum</th>
+                    <th style="width: 120px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.Code</strong></td>
+                        <td>@item.Name</td>
+                        <td><span class="badge badge-primary">@item.ProductGroupName</span></td>
+                        <td>@item.UnitDisplay</td>
+                        <td class="text-right">@item.UnitPrice.ToString("N2")</td>
+                        <td>@(item.ThicknessMm.HasValue ? $"{item.ThicknessMm} mm" : "-")</td>
+                        <td>
+                            @if (item.IsPlate)
+                            {
+                                <span class="badge badge-info"><i class="fas fa-th-large mr-1"></i>Plaka</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="badge badge-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Pasif</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a asp-action="Copy" asp-route-id="@item.Id" class="btn btn-success btn-xs" title="Kopyala">
+                                <i class="fas fa-copy"></i>
+                            </a>
+                            <a asp-controller="Stock" asp-action="Movements" asp-route-productItemId="@item.Id" class="btn btn-info btn-xs" title="Stok Hareketleri">
+                                <i class="fas fa-exchange-alt"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs btn-delete" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblProducts').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

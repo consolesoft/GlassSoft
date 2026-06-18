@@ -1,0 +1,121 @@
+@model List<GlassSoft.Web.Controllers.ReportsController.ProductSalesRow>
+@{
+    ViewData["Title"] = "Ürün Satış Raporu";
+    ViewData["Breadcrumb"] = "Raporlar";
+    var start = (DateTime)ViewBag.StartDate;
+    var end = (DateTime)ViewBag.EndDate;
+    var templateId = (int)ViewBag.PrintTemplateId;
+}
+
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Ürün Satış Raporu (Kapanma Tarihine Göre)</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-3">
+            <div class="row mb-2">
+                <div class="col-md-2">
+                    <label class="small mb-1">Teslim Başlangıç</label>
+                    <input type="date" name="startDate" value="@start.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="small mb-1">Bitiş</label>
+                    <input type="date" name="endDate" value="@end.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="small mb-1">Ürün Grubu</label>
+                    @Html.DropDownList("productGroupId", (SelectList)ViewBag.ProductGroups, new { @class = "form-control form-control-sm no-select2" })
+                </div>
+                <div class="col-md-3">
+                    <label class="small mb-1">Ürün Kodu (içeren)</label>
+                    <input type="text" name="productCode" value="@(ViewBag.SelectedCode ?? "")" class="form-control form-control-sm" placeholder="Örn: CAM-001" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-search mr-1"></i> Filtrele</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    @if (templateId > 0)
+                    {
+                        <a href="@Url.Action("Render", "Output", new { type = (int)GlassSoft.Domain.Enums.OutputType.UrunSatisRaporu, entityId = 0, templateId = templateId, startDate = start.ToString("yyyy-MM-dd"), endDate = end.ToString("yyyy-MM-dd"), autoPrint = false })" target="_blank" class="btn btn-info btn-sm">
+                            <i class="fas fa-print mr-1"></i> Yazdır
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-warning ml-2"><i class="fas fa-exclamation-triangle"></i> Önce bir "Ürün Satış Raporu" şablonu oluşturun (Print Templates → Sıfırla & Güncelle).</span>
+                    }
+                </div>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="info-box bg-info">
+                    <span class="info-box-icon"><i class="fas fa-boxes"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Ürün Çeşidi</span>
+                        <span class="info-box-number">@Model.Count</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-box bg-success">
+                    <span class="info-box-icon"><i class="fas fa-file-invoice"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Toplam Sipariş</span>
+                        <span class="info-box-number">@ViewBag.ToplamSiparis</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-box bg-warning">
+                    <span class="info-box-icon"><i class="fas fa-ruler-combined"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Toplam m²</span>
+                        <span class="info-box-number">@(((decimal)ViewBag.ToplamM2).ToString("N2"))</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-box bg-primary">
+                    <span class="info-box-icon"><i class="fas fa-cubes"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Toplam Adet</span>
+                        <span class="info-box-number">@ViewBag.ToplamAdet</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table id="tbl" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width:40px">#</th>
+                    <th>Ürün / Reçete</th>
+                    <th class="text-right">Toplam Adet</th>
+                    <th class="text-right">Toplam m²</th>
+                    <th class="text-right">Sipariş Sayısı</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int i = 1; }
+                @foreach (var row in Model)
+                {
+                    <tr>
+                        <td>@(i++)</td>
+                        <td>@row.UrunAdi</td>
+                        <td class="text-right">@row.ToplamAdet</td>
+                        <td class="text-right"><strong>@row.ToplamM2.ToString("N2")</strong> m²</td>
+                        <td class="text-right">@row.SiparisSayisi</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tbl').DataTable({ "order": [[3, "desc"]], "pageLength": 50 }); });</script>
+}

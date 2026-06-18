@@ -1,0 +1,64 @@
+@model IEnumerable<RoleListViewModel>
+@{
+    ViewData["Title"] = "Roller";
+    ViewData["Breadcrumb"] = "Yönetim";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Roller</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Rol
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblRoles" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Rol Adı</th>
+                    <th>Açıklama</th>
+                    <th>Kullanıcı Sayısı</th>
+                    <th style="width: 100px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong><span class="badge badge-primary badge-lg">@item.Name</span></strong></td>
+                        <td>@(item.Description ?? "-")</td>
+                        <td>
+                            <span class="badge badge-info">@item.UserCount kullanıcı</span>
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs btn-delete" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblRoles').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

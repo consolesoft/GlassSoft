@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"] - GLASSOFT</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css">
+    <!-- AdminLTE -->
+    <link rel="stylesheet" href="~/lib/admin-lte/css/adminlte.min.css">
+    <!-- Custom -->
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+<body class="hold-transition login-page dark-mode">
+<script>
+    (function() {
+        var t = localStorage.getItem('gs-theme') || 'dark';
+        if (t === 'light') document.body.classList.remove('dark-mode');
+    })();
+</script>
+
+    @RenderBody()
+
+<!-- jQuery -->
+<script src="~/lib/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE -->
+<script src="~/lib/admin-lte/js/adminlte.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,228 @@
+@model List<GlassSoft.Application.DTOs.Production.UnoptimizedOrderLineDto>
+@{
+    ViewData["Title"] = "Yeni İş Emri";
+    ViewData["Breadcrumb"] = "Üretim & Kesim";
+}
+
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+<form asp-action="Create" method="post" id="woForm">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-check-square mr-2"></i>Optimize Edilmemiş Sipariş Kalemleri</h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info" id="selectedCount">0 kalem seçili</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Count == 0)
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted">Optimize edilmemiş sipariş kalemi bulunamadı.</p>
+                            <p class="small text-muted">Onaylanmış siparişlerdeki kalemler burada listelenir.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table table-bordered table-striped mb-0" id="tblLines">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px" class="text-center">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="checkAll">
+                                            <label class="custom-control-label" for="checkAll"></label>
+                                        </div>
+                                    </th>
+                                    <th>Sipariş</th>
+                                    <th>Müşteri</th>
+                                    <th>Ürün / Reçete</th>
+                                    <th class="text-right">En (mm)</th>
+                                    <th class="text-right">Boy (mm)</th>
+                                    <th class="text-center">Adet</th>
+                                    <th class="text-right">m²</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var line in Model)
+                                {
+                                    <tr data-line-id="@line.OrderLineId" data-product-id="@line.ProductItemId" data-recipe-id="@line.RecipeId">
+                                        <td class="text-center">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input line-check"
+                                                       id="chk_@line.OrderLineId" name="SelectedOrderLineIds"
+                                                       value="@line.OrderLineId">
+                                                <label class="custom-control-label" for="chk_@line.OrderLineId"></label>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-info">@line.OrderNumber</span></td>
+                                        <td>@line.CustomerTitle</td>
+                                        <td>
+                                            @if (line.ProductItemName != null)
+                                            {
+                                                <i class="fas fa-cube text-info mr-1"></i>@line.ProductItemName
+                                            }
+                                            else if (line.RecipeCode != null)
+                                            {
+                                                <i class="fas fa-layer-group text-warning mr-1"></i>@line.RecipeCode
+                                            }
+                                        </td>
+                                        <td class="text-right">@line.WidthMm.ToString("0")</td>
+                                        <td class="text-right">@line.HeightMm.ToString("0")</td>
+                                        <td class="text-center">@line.Quantity</td>
+                                        <td class="text-right">@line.AreaM2.ToString("N4")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-clipboard-list mr-2"></i>İş Emri Bilgileri</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Planlanan Üretim Tarihi</label>
+                        <input type="date" name="PlannedDate" class="form-control"
+                               value="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Notlar</label>
+                        <textarea name="Notes" class="form-control" rows="3" placeholder="Opsiyonel..."></textarea>
+                    </div>
+                    <hr>
+                    <div id="selectionSummary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Seçili Kalem:</span>
+                            <strong id="sumLines">0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Sipariş Sayısı:</span>
+                            <strong id="sumOrders">0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Toplam m²:</span>
+                            <strong id="sumArea">0.0000</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary btn-block" id="btnCreate" disabled>
+                        <i class="fas fa-industry mr-1"></i> Oluştur & Reçete Patlat
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" id="filterCard" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Malzeme Filtresi</h3>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2" id="filterText"></p>
+                    <button type="button" class="btn btn-outline-warning btn-sm btn-block" id="btnSelectFiltered">
+                        <i class="fas fa-check-double mr-1"></i> Filtrelenen Tümünü Seç
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-block mt-2" id="btnClearFilter">
+                        <i class="fas fa-times mr-1"></i> Filtreyi Kaldır
+                    </button>
+                </div>
+            </div>
+
+            <a asp-action="Index" class="btn btn-secondary btn-block"><i class="fas fa-arrow-left mr-1"></i> Listeye Dön</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        var dt = $('#tblLines').DataTable({
+            pageLength: 25,
+            order: [[1, 'asc'], [3, 'asc']],
+            columnDefs: [{ orderable: false, targets: 0 }]
+        });
+
+        var filteredProductId = null;
+        var filteredLineIds = [];
+
+        function updateSummary() {
+            var checked = $('.line-check:checked');
+            var count = checked.length;
+            var orders = {};
+            var totalArea = 0;
+            checked.each(function() {
+                var row = $(this).closest('tr');
+                var orderNum = row.find('td:eq(1)').text().trim();
+                orders[orderNum] = true;
+                var w = parseFloat(row.find('td:eq(4)').text().replace(/\./g, '').replace(',', '.')) || 0;
+                var h = parseFloat(row.find('td:eq(5)').text().replace(/\./g, '').replace(',', '.')) || 0;
+                var qty = parseInt(row.find('td:eq(6)').text()) || 0;
+                totalArea += (w * h / 1000000) * qty;
+            });
+            $('#selectedCount').text(count + ' kalem seçili');
+            $('#sumLines').text(count);
+            $('#sumOrders').text(Object.keys(orders).length);
+            $('#sumArea').text(totalArea.toFixed(4));
+            $('#btnCreate').prop('disabled', count === 0);
+        }
+
+        $(document).on('change', '.line-check', function() {
+            updateSummary();
+            if ($(this).is(':checked') && !filteredProductId) {
+                var row = $(this).closest('tr');
+                var productId = row.data('product-id');
+                if (productId) { applyMaterialFilter(productId); }
+            }
+        });
+
+        function applyMaterialFilter(productId) {
+            filteredProductId = productId;
+            filteredLineIds = [];
+            $.getJSON('@Url.Action("GetLinesByMaterial")?productItemId=' + productId, function(ids) {
+                filteredLineIds = ids;
+                $('#tblLines tbody tr').each(function() {
+                    var lineId = $(this).data('line-id');
+                    if (ids.indexOf(lineId) >= 0) {
+                        $(this).addClass('table-active').css('background', 'rgba(23, 162, 184, 0.12)');
+                    } else {
+                        $(this).css('opacity', '0.4');
+                    }
+                });
+                var productName = $('#tblLines tbody tr').filter(function() {
+                    return $(this).data('product-id') == productId;
+                }).first().find('td:eq(3)').text().trim();
+                $('#filterText').html('Seçilen malzeme ile aynı: <strong>' + productName + '</strong><br><span class="badge badge-info mt-1">' + ids.length + ' kalem bulundu</span>');
+                $('#filterCard').show();
+            });
+        }
+
+        $('#btnSelectFiltered').click(function() {
+            filteredLineIds.forEach(function(id) { $('#chk_' + id).prop('checked', true); });
+            updateSummary();
+        });
+
+        $('#btnClearFilter').click(function() {
+            filteredProductId = null;
+            filteredLineIds = [];
+            $('#tblLines tbody tr').removeClass('table-active').css({ 'background': '', 'opacity': '' });
+            $('#filterCard').hide();
+        });
+
+        $('#checkAll').change(function() {
+            var isChecked = $(this).is(':checked');
+            $('.line-check').prop('checked', isChecked);
+            updateSummary();
+        });
+    });
+    </script>
+}

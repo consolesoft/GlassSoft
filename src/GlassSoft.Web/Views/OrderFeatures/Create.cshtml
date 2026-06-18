@@ -1,0 +1,39 @@
+@model GlassSoft.Domain.Entities.Sales.OrderFeatureDefinition
+@{
+    ViewData["Title"] = "Yeni Kalem Özelliği";
+    ViewData["Breadcrumb"] = "Satış";
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Kalem Özelliği</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Özellik Adı</label>
+                        <input asp-for="Name" class="form-control" required placeholder="Temperli, Lamine, Buzlu cam..." />
+                    </div>
+                    <div class="form-group">
+                        <label>Birim Fiyat</label>
+                        <input asp-for="UnitPrice" type="number" step="0.01" class="form-control" required placeholder="0.00" />
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label">Aktif</label>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

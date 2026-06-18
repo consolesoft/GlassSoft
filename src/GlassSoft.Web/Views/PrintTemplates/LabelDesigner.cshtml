@@ -1,0 +1,635 @@
+@model GlassSoft.Application.DTOs.Output.PrintTemplateUpdateDto
+@{
+    ViewData["Title"] = "Etiket Tasarımcısı";
+    ViewData["Breadcrumb"] = "Yazdır Şablonları";
+    var existingId = Model?.Id ?? 0;
+    var existingName = Model?.Name ?? "";
+    var existingHtml = Model?.HtmlContent ?? "";
+    var existingDesc = Model?.Description ?? "";
+    var existingDefault = Model?.IsDefault ?? false;
+}
+
+<div class="row">
+    <!-- Sol: Alan Paleti -->
+    <div class="col-md-2">
+        <div class="card">
+            <div class="card-header py-2">
+                <h3 class="card-title small"><i class="fas fa-puzzle-piece mr-1"></i> Alanlar</h3>
+            </div>
+            <div class="card-body p-2">
+                <div class="label-field-item" data-field="FirmaLogo" data-default="[LOGO]">
+                    <i class="fas fa-image text-info"></i> <small>Firma Logo</small>
+                </div>
+                <div class="label-field-item" data-field="FirmaAdi" data-default="FİRMA ADI">
+                    <i class="fas fa-building text-primary"></i> <small>Firma Adı</small>
+                </div>
+                <div class="label-field-item" data-field="SiparisNo" data-default="SIP-2026-001">
+                    <i class="fas fa-hashtag text-success"></i> <small>Sipariş No</small>
+                </div>
+                <div class="label-field-item" data-field="UrunAdi" data-default="4mm Düz Cam">
+                    <i class="fas fa-cube text-warning"></i> <small>Ürün Adı</small>
+                </div>
+                <div class="label-field-item" data-field="Olcu" data-default="1000 x 500">
+                    <i class="fas fa-ruler-combined text-danger"></i> <small>Ölçü (ExB)</small>
+                </div>
+                <div class="label-field-item" data-field="Adet" data-default="10">
+                    <i class="fas fa-sort-numeric-up text-info"></i> <small>Adet</small>
+                </div>
+                <div class="label-field-item" data-field="PozNo" data-default="A1">
+                    <i class="fas fa-map-pin text-secondary"></i> <small>Poz No</small>
+                </div>
+                <div class="label-field-item" data-field="MusteriAdi" data-default="Müşteri A.Ş.">
+                    <i class="fas fa-user text-primary"></i> <small>Müşteri</small>
+                </div>
+                <div class="label-field-item" data-field="MusteriKodu" data-default="MUS001">
+                    <i class="fas fa-barcode text-secondary"></i> <small>Müşteri Kodu</small>
+                </div>
+                <div class="label-field-item" data-field="En" data-default="1000">
+                    <i class="fas fa-arrows-alt-h text-muted"></i> <small>En (mm)</small>
+                </div>
+                <div class="label-field-item" data-field="Boy" data-default="500">
+                    <i class="fas fa-arrows-alt-v text-muted"></i> <small>Boy (mm)</small>
+                </div>
+                <div class="label-field-item" data-field="Alan" data-default="0.5000">
+                    <i class="fas fa-vector-square text-muted"></i> <small>Alan (m²)</small>
+                </div>
+                <div class="label-field-item" data-field="Ozellikler" data-default="Temperli">
+                    <i class="fas fa-tags text-warning"></i> <small>Özellikler</small>
+                </div>
+                <div class="label-field-item" data-field="Tarih" data-default="06.04.2026">
+                    <i class="fas fa-calendar text-success"></i> <small>Tarih</small>
+                </div>
+                <div class="label-field-item" data-field="KalemNo" data-default="42">
+                    <i class="fas fa-list-ol text-muted"></i> <small>Kalem No</small>
+                </div>
+                <hr class="my-2">
+                <div class="label-field-item" data-field="_text" data-default="Metin">
+                    <i class="fas fa-font text-light"></i> <small>Serbest Metin</small>
+                </div>
+                <div class="label-field-item" data-field="_line" data-default="">
+                    <i class="fas fa-minus text-light"></i> <small>Çizgi</small>
+                </div>
+                <div class="label-field-item" data-field="_rect" data-default="">
+                    <i class="fas fa-square text-light"></i> <small>Kutu</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hazır Şablonlar -->
+        <div class="card">
+            <div class="card-header py-2">
+                <h3 class="card-title small"><i class="fas fa-palette mr-1"></i> Hazır</h3>
+            </div>
+            <div class="card-body p-2">
+                <button class="btn btn-outline-primary btn-block btn-sm mb-1" id="btnLoadModern">
+                    <i class="fas fa-gem mr-1"></i> Modern
+                </button>
+                <button class="btn btn-outline-warning btn-block btn-sm mb-1" id="btnLoadKlasik">
+                    <i class="fas fa-landmark mr-1"></i> Klasik
+                </button>
+                <button class="btn btn-outline-success btn-block btn-sm mb-1" id="btnLoadMinimal">
+                    <i class="fas fa-feather-alt mr-1"></i> Minimal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orta: Tasarım Canvas -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header py-2">
+                <h3 class="card-title small"><i class="fas fa-tag mr-1"></i> Etiket Tasarımı (95mm × 65mm)</h3>
+                <div class="card-tools">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info btn-xs" id="btnZoomOut" title="Küçült"><i class="fas fa-search-minus"></i></button>
+                        <button class="btn btn-outline-info btn-xs" id="btnZoomReset" title="Sıfırla">100%</button>
+                        <button class="btn btn-outline-info btn-xs" id="btnZoomIn" title="Büyüt"><i class="fas fa-search-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="background: #2d2d2d; overflow: auto; min-height: 500px; display: flex; align-items: center; justify-content: center;">
+                <div id="canvasWrapper" style="transform-origin: center center;">
+                    <div id="labelCanvas">
+                        <!-- Draggable elements go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kaydet -->
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" id="labelName" placeholder="Şablon adı..." value="@existingName" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" id="labelDesc" placeholder="Açıklama..." value="@existingDesc" />
+                    </div>
+                    <div class="col-md-2">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="labelDefault" @(existingDefault ? "checked" : "")>
+                            <label class="custom-control-label small" for="labelDefault">Varsayılan</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-right">
+                        <button class="btn btn-primary btn-sm" id="btnSave"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                        <a asp-action="Index" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sağ: Özellikler + Önizleme -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header py-2">
+                <h3 class="card-title small"><i class="fas fa-sliders-h mr-1"></i> Özellikler</h3>
+            </div>
+            <div class="card-body p-2" id="propsPanel">
+                <p class="text-muted small text-center mt-3"><i class="fas fa-mouse-pointer mr-1"></i> Bir eleman seçin</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header py-2">
+                <h3 class="card-title small"><i class="fas fa-eye mr-1"></i> HTML Önizleme</h3>
+                <div class="card-tools">
+                    <button class="btn btn-info btn-xs" id="btnRefreshPreview"><i class="fas fa-sync"></i></button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <iframe id="previewFrame" style="width:100%; height:280px; border:none; background:#fff;"></iframe>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header py-2">
+                <h3 class="card-title small"><i class="fas fa-code mr-1"></i> HTML</h3>
+                <div class="card-tools">
+                    <button class="btn btn-warning btn-xs" id="btnCopyHtml" title="Kopyala"><i class="fas fa-copy"></i></button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <textarea id="htmlOutput" class="form-control" rows="6"
+                          style="font-family: monospace; font-size: 10px; background: #1e1e1e; color: #d4d4d4; border: none; resize: vertical;"
+                          readonly></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="templateId" value="@existingId" />
+
+@section Styles {
+<style>
+    .label-field-item {
+        display: flex; align-items: center; gap: 6px; padding: 5px 8px; margin-bottom: 3px;
+        border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; cursor: grab;
+        transition: all 0.2s; font-size: 12px; color: #ccc;
+    }
+    .label-field-item:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+    .label-field-item:active { cursor: grabbing; }
+    .label-field-item i { width: 14px; text-align: center; font-size: 12px; }
+
+    #labelCanvas {
+        width: 359px; /* 95mm * 3.78 px/mm */
+        height: 246px; /* 65mm * 3.78 px/mm */
+        background: #fff;
+        border: 2px solid #003366;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .canvas-element {
+        position: absolute;
+        cursor: move;
+        padding: 2px 4px;
+        border: 1px dashed transparent;
+        transition: border-color 0.15s;
+        user-select: none;
+        white-space: nowrap;
+        color: #333;
+        font-family: Arial, sans-serif;
+        font-size: 9px;
+    }
+    .canvas-element:hover { border-color: #007bff; }
+    .canvas-element.selected { border-color: #007bff; background: rgba(0,123,255,0.05); }
+    .canvas-element .resize-handle {
+        position: absolute; right: -3px; bottom: -3px; width: 8px; height: 8px;
+        background: #007bff; cursor: se-resize; border-radius: 2px; display: none;
+    }
+    .canvas-element.selected .resize-handle { display: block; }
+
+    .canvas-element.el-line {
+        padding: 0; height: 2px !important; background: #333; min-width: 40px;
+    }
+    .canvas-element.el-rect {
+        border: 1.5px solid #333 !important; background: transparent; min-width: 30px; min-height: 20px;
+    }
+</style>
+}
+
+@section Scripts {
+<script>
+$(document).ready(function() {
+    var canvas = document.getElementById('labelCanvas');
+    var $canvas = $(canvas);
+    var zoom = 1;
+    var nextId = 1;
+    var selectedEl = null;
+    var templateId = parseInt($('#templateId').val()) || 0;
+
+    // Canvas px boyutları (95mm x 65mm, 1mm = 3.78px)
+    var CANVAS_W = 359, CANVAS_H = 246;
+    var MM_PX = 3.78; // 1mm = 3.78px (96dpi)
+
+    // ═══════════════════════════════════
+    //  ZOOM
+    // ═══════════════════════════════════
+    $('#btnZoomIn').click(function() { zoom = Math.min(zoom + 0.2, 2.5); applyZoom(); });
+    $('#btnZoomOut').click(function() { zoom = Math.max(zoom - 0.2, 0.5); applyZoom(); });
+    $('#btnZoomReset').click(function() { zoom = 1; applyZoom(); });
+    function applyZoom() {
+        $('#canvasWrapper').css('transform', 'scale(' + zoom + ')');
+        $('#btnZoomReset').text(Math.round(zoom * 100) + '%');
+    }
+
+    // ═══════════════════════════════════
+    //  DRAG FROM PALETTE
+    // ═══════════════════════════════════
+    $('.label-field-item').on('mousedown', function(e) {
+        e.preventDefault();
+        var field = $(this).data('field');
+        var defaultText = $(this).data('default');
+        var startX = e.pageX, startY = e.pageY;
+        var moved = false;
+        var ghost = null;
+
+        $(document).on('mousemove.paletdrag', function(e2) {
+            if (!moved && (Math.abs(e2.pageX - startX) > 5 || Math.abs(e2.pageY - startY) > 5)) {
+                moved = true;
+                ghost = $('<div class="canvas-element" style="position:fixed; pointer-events:none; opacity:0.7; z-index:9999; font-size:10px;">' + (defaultText || field) + '</div>');
+                $('body').append(ghost);
+            }
+            if (ghost) ghost.css({ left: e2.pageX + 5, top: e2.pageY + 5 });
+        });
+
+        $(document).on('mouseup.paletdrag', function(e2) {
+            $(document).off('.paletdrag');
+            if (ghost) ghost.remove();
+            if (!moved) return;
+            var canvasRect = canvas.getBoundingClientRect();
+            var x = (e2.clientX - canvasRect.left) / zoom;
+            var y = (e2.clientY - canvasRect.top) / zoom;
+            if (x < 0 || y < 0 || x > CANVAS_W || y > CANVAS_H) return;
+            addElement(field, defaultText, x, y);
+        });
+    });
+
+    // ═══════════════════════════════════
+    //  ADD ELEMENT
+    // ═══════════════════════════════════
+    function addElement(field, text, x, y, opts) {
+        opts = opts || {};
+        var id = 'el_' + (nextId++);
+        var isLine = field === '_line';
+        var isRect = field === '_rect';
+        var isText = field === '_text';
+        var placeholder = (field.startsWith('_')) ? '' : '{{' + field + '}}';
+        var displayText = text || field;
+
+        var cls = 'canvas-element';
+        if (isLine) cls += ' el-line';
+        if (isRect) cls += ' el-rect';
+
+        var el = $('<div>')
+            .attr('id', id)
+            .addClass(cls)
+            .css({
+                left: (opts.x || x) + 'px',
+                top: (opts.y || y) + 'px',
+                fontSize: (opts.fontSize || (isLine || isRect ? 0 : 9)) + 'px',
+                fontWeight: opts.fontWeight || 'normal',
+                color: opts.color || '#333',
+                width: opts.width ? opts.width + 'px' : (isLine ? '80px' : (isRect ? '60px' : 'auto')),
+                height: opts.height ? opts.height + 'px' : (isRect ? '30px' : 'auto'),
+            })
+            .data('field', field)
+            .data('placeholder', placeholder);
+
+        if (!isLine && !isRect) {
+            el.text(displayText);
+        }
+        el.append('<div class="resize-handle"></div>');
+        $canvas.append(el);
+        makeDraggable(el);
+        makeResizable(el);
+        selectElement(el);
+        generateHtml();
+        return el;
+    }
+
+    // ═══════════════════════════════════
+    //  DRAG ELEMENT ON CANVAS
+    // ═══════════════════════════════════
+    function makeDraggable(el) {
+        var startX, startY, origX, origY;
+        el.on('mousedown', function(e) {
+            if ($(e.target).hasClass('resize-handle')) return;
+            e.preventDefault(); e.stopPropagation();
+            selectElement(el);
+            startX = e.pageX; startY = e.pageY;
+            origX = parseInt(el.css('left')) || 0;
+            origY = parseInt(el.css('top')) || 0;
+
+            $(document).on('mousemove.eldrag', function(e2) {
+                var dx = (e2.pageX - startX) / zoom;
+                var dy = (e2.pageY - startY) / zoom;
+                var nx = Math.max(0, Math.min(CANVAS_W - el.outerWidth(), origX + dx));
+                var ny = Math.max(0, Math.min(CANVAS_H - el.outerHeight(), origY + dy));
+                el.css({ left: nx + 'px', top: ny + 'px' });
+            });
+            $(document).on('mouseup.eldrag', function() {
+                $(document).off('.eldrag');
+                updateProps();
+                generateHtml();
+            });
+        });
+    }
+
+    function makeResizable(el) {
+        el.find('.resize-handle').on('mousedown', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            var startX = e.pageX, startY = e.pageY;
+            var origW = el.outerWidth(), origH = el.outerHeight();
+
+            $(document).on('mousemove.elresize', function(e2) {
+                var dw = (e2.pageX - startX) / zoom;
+                var dh = (e2.pageY - startY) / zoom;
+                el.css({ width: Math.max(20, origW + dw) + 'px', height: Math.max(8, origH + dh) + 'px' });
+            });
+            $(document).on('mouseup.elresize', function() {
+                $(document).off('.elresize');
+                updateProps();
+                generateHtml();
+            });
+        });
+    }
+
+    // ═══════════════════════════════════
+    //  SELECT / DESELECT
+    // ═══════════════════════════════════
+    function selectElement(el) {
+        if (selectedEl) selectedEl.removeClass('selected');
+        selectedEl = el;
+        el.addClass('selected');
+        showProperties(el);
+    }
+
+    $canvas.on('click', function(e) {
+        if (e.target === canvas) {
+            if (selectedEl) selectedEl.removeClass('selected');
+            selectedEl = null;
+            $('#propsPanel').html('<p class="text-muted small text-center mt-3"><i class="fas fa-mouse-pointer mr-1"></i> Bir eleman seçin</p>');
+        }
+    });
+
+    // Delete key
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Delete' && selectedEl && !$(e.target).is('input, textarea, select')) {
+            selectedEl.remove();
+            selectedEl = null;
+            $('#propsPanel').html('<p class="text-muted small text-center mt-3"><i class="fas fa-mouse-pointer mr-1"></i> Bir eleman seçin</p>');
+            generateHtml();
+        }
+    });
+
+    // ═══════════════════════════════════
+    //  PROPERTIES PANEL
+    // ═══════════════════════════════════
+    function showProperties(el) {
+        var field = el.data('field');
+        var isLine = field === '_line';
+        var isRect = field === '_rect';
+        var html = '<div class="small">';
+        html += '<div class="font-weight-bold mb-2" style="border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px;">';
+        html += '<i class="fas fa-cog mr-1"></i> ' + (field.startsWith('_') ? field.substring(1).toUpperCase() : '{{' + field + '}}');
+        html += ' <button class="btn btn-outline-danger btn-xs float-right btn-del-el"><i class="fas fa-trash"></i></button>';
+        html += '</div>';
+
+        if (!isLine && !isRect) {
+            html += '<div class="form-group mb-1"><label class="mb-0" style="font-size:10px">Görünen Metin</label>';
+            html += '<input type="text" class="form-control form-control-sm prop-text" value="' + escHtml(el.text()) + '" style="font-size:11px" /></div>';
+        }
+
+        html += '<div class="row no-gutters mb-1">';
+        html += '<div class="col-6 pr-1"><label class="mb-0" style="font-size:10px">X (px)</label><input type="number" class="form-control form-control-sm prop-x" value="' + Math.round(parseInt(el.css('left'))) + '" /></div>';
+        html += '<div class="col-6"><label class="mb-0" style="font-size:10px">Y (px)</label><input type="number" class="form-control form-control-sm prop-y" value="' + Math.round(parseInt(el.css('top'))) + '" /></div>';
+        html += '</div>';
+
+        if (!isLine || isRect) {
+            html += '<div class="row no-gutters mb-1">';
+            html += '<div class="col-6 pr-1"><label class="mb-0" style="font-size:10px">Genişlik</label><input type="number" class="form-control form-control-sm prop-w" value="' + Math.round(el.outerWidth()) + '" /></div>';
+            html += '<div class="col-6"><label class="mb-0" style="font-size:10px">Yükseklik</label><input type="number" class="form-control form-control-sm prop-h" value="' + Math.round(el.outerHeight()) + '" /></div>';
+            html += '</div>';
+        }
+
+        if (!isLine) {
+            html += '<div class="row no-gutters mb-1">';
+            html += '<div class="col-6 pr-1"><label class="mb-0" style="font-size:10px">Yazı Boyutu</label><input type="number" class="form-control form-control-sm prop-fontsize" value="' + parseInt(el.css('fontSize')) + '" min="5" max="30" /></div>';
+            html += '<div class="col-6"><label class="mb-0" style="font-size:10px">Kalınlık</label><select class="form-control form-control-sm no-select2 prop-fontweight"><option value="normal"' + (el.css('fontWeight') == '400' || el.css('fontWeight') == 'normal' ? ' selected' : '') + '>Normal</option><option value="bold"' + (el.css('fontWeight') == '700' || el.css('fontWeight') == 'bold' ? ' selected' : '') + '>Kalın</option></select></div>';
+            html += '</div>';
+            html += '<div class="form-group mb-1"><label class="mb-0" style="font-size:10px">Renk</label><input type="color" class="form-control form-control-sm prop-color" value="' + rgbToHex(el.css('color')) + '" style="height:28px;padding:2px" /></div>';
+        }
+
+        if (isLine) {
+            html += '<div class="form-group mb-1"><label class="mb-0" style="font-size:10px">Genişlik</label><input type="number" class="form-control form-control-sm prop-w" value="' + Math.round(el.outerWidth()) + '" /></div>';
+            html += '<div class="form-group mb-1"><label class="mb-0" style="font-size:10px">Kalınlık (px)</label><input type="number" class="form-control form-control-sm prop-lineheight" value="' + (parseInt(el.css('height')) || 2) + '" min="1" max="5" /></div>';
+            html += '<div class="form-group mb-1"><label class="mb-0" style="font-size:10px">Renk</label><input type="color" class="form-control form-control-sm prop-linecolor" value="' + rgbToHex(el.css('background-color')) + '" style="height:28px;padding:2px" /></div>';
+        }
+
+        if (isRect) {
+            html += '<div class="form-group mb-1"><label class="mb-0" style="font-size:10px">Kenarlık Rengi</label><input type="color" class="form-control form-control-sm prop-bordercolor" value="' + rgbToHex(el.css('border-color')) + '" style="height:28px;padding:2px" /></div>';
+        }
+
+        html += '</div>';
+        $('#propsPanel').html(html);
+    }
+
+    function updateProps() {
+        if (selectedEl) showProperties(selectedEl);
+    }
+
+    // Property changes
+    $(document).on('input change', '.prop-text', function() { if (selectedEl) { selectedEl.contents().first().replaceWith($(this).val()); generateHtml(); } });
+    $(document).on('input', '.prop-x', function() { if (selectedEl) { selectedEl.css('left', $(this).val() + 'px'); generateHtml(); } });
+    $(document).on('input', '.prop-y', function() { if (selectedEl) { selectedEl.css('top', $(this).val() + 'px'); generateHtml(); } });
+    $(document).on('input', '.prop-w', function() { if (selectedEl) { selectedEl.css('width', $(this).val() + 'px'); generateHtml(); } });
+    $(document).on('input', '.prop-h', function() { if (selectedEl) { selectedEl.css('height', $(this).val() + 'px'); generateHtml(); } });
+    $(document).on('input', '.prop-fontsize', function() { if (selectedEl) { selectedEl.css('fontSize', $(this).val() + 'px'); generateHtml(); } });
+    $(document).on('change', '.prop-fontweight', function() { if (selectedEl) { selectedEl.css('fontWeight', $(this).val()); generateHtml(); } });
+    $(document).on('input', '.prop-color', function() { if (selectedEl) { selectedEl.css('color', $(this).val()); generateHtml(); } });
+    $(document).on('input', '.prop-lineheight', function() { if (selectedEl) { selectedEl.css('height', $(this).val() + 'px'); generateHtml(); } });
+    $(document).on('input', '.prop-linecolor', function() { if (selectedEl) { selectedEl.css('background-color', $(this).val()); generateHtml(); } });
+    $(document).on('input', '.prop-bordercolor', function() { if (selectedEl) { selectedEl.css('border-color', $(this).val()); generateHtml(); } });
+    $(document).on('click', '.btn-del-el', function() {
+        if (selectedEl) { selectedEl.remove(); selectedEl = null; generateHtml(); }
+        $('#propsPanel').html('<p class="text-muted small text-center mt-3"><i class="fas fa-mouse-pointer mr-1"></i> Bir eleman seçin</p>');
+    });
+
+    // ═══════════════════════════════════
+    //  GENERATE HTML
+    // ═══════════════════════════════════
+    function generateHtml() {
+        var atSign = String.fromCharCode(64); // avoid Razor parsing
+        var css = '<style>\n* { margin: 0; padding: 0; box-sizing: border-box; }\n';
+        css += 'body { font-family: Arial, sans-serif; background: #fff; }\n';
+        css += atSign + 'page { size: 95mm 65mm; margin: 0; }\n';
+        css += '.label { width: 95mm; height: 65mm; position: relative; border: 1px solid #ccc; overflow: hidden; page-break-after: always; }\n';
+        css += atSign + 'media print { body { margin: 0; } .label { border: none; } }\n';
+        css += '</style>\n';
+
+        var body = '<div class="label">\n';
+        $canvas.find('.canvas-element').each(function() {
+            var $el = $(this);
+            var field = $el.data('field');
+            var placeholder = $el.data('placeholder');
+            var isLine = field === '_line';
+            var isRect = field === '_rect';
+
+            var left = (parseInt($el.css('left')) / MM_PX).toFixed(1);
+            var top = (parseInt($el.css('top')) / MM_PX).toFixed(1);
+
+            var style = 'position:absolute; left:' + left + 'mm; top:' + top + 'mm;';
+
+            if (isLine) {
+                var w = ($el.outerWidth() / MM_PX).toFixed(1);
+                var h = parseInt($el.css('height')) || 2;
+                var bg = $el.css('background-color');
+                style += ' width:' + w + 'mm; height:' + h + 'px; background:' + bg + ';';
+                body += '    <div style="' + style + '"></div>\n';
+            } else if (isRect) {
+                var w = ($el.outerWidth() / MM_PX).toFixed(1);
+                var h = ($el.outerHeight() / MM_PX).toFixed(1);
+                var bc = $el.css('border-color');
+                style += ' width:' + w + 'mm; height:' + h + 'mm; border:1.5px solid ' + bc + ';';
+                body += '    <div style="' + style + '"></div>\n';
+            } else {
+                var fs = parseInt($el.css('fontSize'));
+                var fw = ($el.css('fontWeight') == '700' || $el.css('fontWeight') == 'bold') ? ' font-weight:bold;' : '';
+                var clr = rgbToHex($el.css('color'));
+                style += ' font-size:' + fs + 'px;' + fw + ' color:' + clr + ';';
+                var text = placeholder || escHtml($el.text());
+                body += '    <div style="' + style + '">' + text + '</div>\n';
+            }
+        });
+        body += '</div>';
+
+        var fullHtml = css + body;
+        $('#htmlOutput').val(fullHtml);
+    }
+
+    // ═══════════════════════════════════
+    //  PREVIEW
+    // ═══════════════════════════════════
+    $('#btnRefreshPreview').click(function() {
+        var html = $('#htmlOutput').val();
+        var frame = document.getElementById('previewFrame');
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(html); doc.close();
+    });
+
+    // ═══════════════════════════════════
+    //  SAVE
+    // ═══════════════════════════════════
+    $('#btnSave').click(function() {
+        var name = $('#labelName').val().trim();
+        if (!name) { toastr.warning('Şablon adı girin.'); $('#labelName').focus(); return; }
+        generateHtml();
+        var data = {
+            id: templateId,
+            name: name,
+            htmlContent: $('#htmlOutput').val(),
+            isDefault: $('#labelDefault').is(':checked'),
+            description: $('#labelDesc').val() || null
+        };
+        $.ajax({
+            url: '@Url.Action("SaveLabel")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(res) {
+                if (res.success) {
+                    templateId = res.id;
+                    $('#templateId').val(res.id);
+                    toastr.success('Etiket şablonu kaydedildi!');
+                } else {
+                    toastr.error('Kayıt hatası');
+                }
+            },
+            error: function() { toastr.error('Kayıt hatası'); }
+        });
+    });
+
+    // ═══════════════════════════════════
+    //  LOAD GALLERY TEMPLATES
+    // ═══════════════════════════════════
+    function loadGalleryTemplate(style) {
+        $.get('@Url.Action("GalleryTemplate")', { type: 7, style: style }, function(html) {
+            $canvas.find('.canvas-element').remove();
+            selectedEl = null;
+            $('#htmlOutput').val(html);
+            // Preview
+            var frame = document.getElementById('previewFrame');
+            var doc = frame.contentDocument || frame.contentWindow.document;
+            doc.open(); doc.write(html); doc.close();
+            toastr.info(style + ' etiket şablonu yüklendi. HTML panelinden düzenleyebilirsiniz.');
+            if (!$('#labelName').val()) $('#labelName').val(style + ' Etiket');
+        });
+    }
+
+    $('#btnLoadModern').click(function() { loadGalleryTemplate('Modern'); });
+    $('#btnLoadKlasik').click(function() { loadGalleryTemplate('Klasik'); });
+    $('#btnLoadMinimal').click(function() { loadGalleryTemplate('Minimal'); });
+
+    // ═══════════════════════════════════
+    //  COPY HTML
+    // ═══════════════════════════════════
+    $('#btnCopyHtml').click(function() {
+        var textarea = document.getElementById('htmlOutput');
+        textarea.select();
+        document.execCommand('copy');
+        toastr.success('HTML kopyalandı!');
+    });
+
+    // ═══════════════════════════════════
+    //  LOAD EXISTING TEMPLATE
+    // ═══════════════════════════════════
+    @if (!string.IsNullOrEmpty(existingHtml))
+    {
+        <text>
+        var existingHtml = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(existingHtml));
+        $('#htmlOutput').val(existingHtml);
+        var frame = document.getElementById('previewFrame');
+        var doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open(); doc.write(existingHtml); doc.close();
+        </text>
+    }
+
+    // ═══════════════════════════════════
+    //  HELPERS
+    // ═══════════════════════════════════
+    function rgbToHex(rgb) {
+        if (!rgb || rgb === 'transparent') return '#333333';
+        if (rgb.startsWith('#')) return rgb;
+        var match = rgb.match(/\d+/g);
+        if (!match || match.length < 3) return '#333333';
+        return '#' + match.slice(0,3).map(function(x) { return parseInt(x).toString(16).padStart(2, '0'); }).join('');
+    }
+    function escHtml(s) { return $('<div>').text(s).html(); }
+});
+</script>
+}

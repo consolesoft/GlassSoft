@@ -1,0 +1,336 @@
+@{
+    ViewData["Title"] = "Sistem Ayarları";
+    ViewData["Breadcrumb"] = "Yönetim";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+<form asp-action="Save" method="post">
+    <div class="row">
+        <!-- Sol Kolon: Firma Bilgileri -->
+        <div class="col-md-6">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-building mr-2"></i>Firma Bilgileri</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Firma Adı <span class="text-warning">*</span></label>
+                                <input type="text" name="companyName" class="form-control" value="@ViewBag.CompanyName" placeholder="Örn: DamlaCam" />
+                                <small class="text-muted">Çıktı şablonlarında kullanılır</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Şehir</label>
+                                <input type="text" name="companyCity" class="form-control" value="@ViewBag.CompanyCity" placeholder="İstanbul" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Firma Sloganı / Alt Başlık</label>
+                        <input type="text" name="companySlogan" class="form-control" value="@ViewBag.CompanySlogan" placeholder="Örn: Cam Sektörü ERP Sistemi" />
+                    </div>
+                    <div class="form-group">
+                        <label>Adres</label>
+                        <input type="text" name="companyAddress" class="form-control" value="@ViewBag.CompanyAddress" placeholder="Firma adresi" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Telefon</label>
+                                <input type="text" name="companyPhone" class="form-control" value="@ViewBag.CompanyPhone" placeholder="0212 xxx xx xx" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>E-posta</label>
+                                <input type="email" name="companyEmail" class="form-control" value="@ViewBag.CompanyEmail" placeholder="info@firma.com" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Vergi No</label>
+                                <input type="text" name="companyTaxNo" class="form-control" value="@ViewBag.CompanyTaxNo" placeholder="1234567890" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Vergi Dairesi</label>
+                                <input type="text" name="companyTaxOffice" class="form-control" value="@ViewBag.CompanyTaxOffice" placeholder="Vergi dairesi" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sağ Kolon: Sipariş + Kod Ayarları -->
+        <div class="col-md-6">
+            <div class="card card-outline card-warning">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-ruler-combined mr-2"></i>Sipariş Ayarları</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Minimum m² Değeri</label>
+                        <input type="number" name="minM2" class="form-control" step="0.0001" value="@ViewBag.MinM2" placeholder="0" />
+                        <small class="text-muted">Sipariş kaleminde m² bu değerden küçükse, bu değer uygulanır ve satır işaretlenir. 0 = devre dışı.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Varsayılan Termin Süresi (gün)</label>
+                        <input type="number" name="defaultDeliveryDays" class="form-control" value="@ViewBag.DefaultDeliveryDays" placeholder="14" />
+                        <small class="text-muted">Sipariş onaylandığında otomatik termin tarihi: onay tarihi + bu gün sayısı.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-outline card-secondary">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-barcode mr-2"></i>Kod Ayarları</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Ürün Kodu Ön Eki</label>
+                        <input type="text" name="productCodePrefix" class="form-control" value="@ViewBag.ProductCodePrefix" placeholder="URN" maxlength="10" />
+                        <small class="text-muted">Otomatik ürün kodu: ÖnEk-001, ÖnEk-002...</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Cari Kodu Ön Eki</label>
+                        <input type="text" name="customerCodePrefix" class="form-control" value="@ViewBag.CustomerCodePrefix" placeholder="CRI" maxlength="10" />
+                        <small class="text-muted">Otomatik cari kodu: ÖnEk-001, ÖnEk-002...</small>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="fas fa-save mr-1"></i> Kaydet</button>
+        </div>
+    </div>
+</form>
+
+<!-- Firma Logosu (ayrı form - enctype gerekli, Save formunun dışında) -->
+<div class="row mt-3">
+    <div class="col-md-6">
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-image mr-2"></i>Firma Logosu</h3>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty((string)ViewBag.CompanyLogo))
+                {
+                    <div class="mb-3 text-center">
+                        <img src="@ViewBag.CompanyLogo?v=@DateTime.Now.Ticks" alt="Firma Logo" style="max-height: 80px; max-width: 250px; background: #fff; padding: 8px; border-radius: 6px;" />
+                        <div class="mt-2"><small class="text-success"><i class="fas fa-check-circle mr-1"></i>Logo yüklü: @ViewBag.CompanyLogo</small></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3 text-center text-muted">
+                        <i class="fas fa-image fa-3x mb-2"></i>
+                        <p>Henüz logo yüklenmedi</p>
+                    </div>
+                }
+                <form asp-action="UploadLogo" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="input-group">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="logoFile" name="logoFile" accept=".png,.jpg,.jpeg,.svg" required>
+                            <label class="custom-file-label" for="logoFile">Logo dosyası seçin (PNG, JPG, SVG)</label>
+                        </div>
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-info"><i class="fas fa-upload mr-1"></i> Yükle</button>
+                        </div>
+                    </div>
+                    <small class="text-muted">Önerilen: PNG/SVG, şeffaf zemin, max 250x80 px</small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tehlikeli İşlemler -->
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="card card-outline card-danger">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-exclamation-triangle mr-2"></i>Tehlikeli İşlemler</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong><i class="fas fa-exclamation-circle mr-1"></i> Dikkat!</strong>
+                    Bu bölümdeki işlemler veritabanında toplu değişiklik yapar. Yanlış kullanım veri tutarsızlığına yol açabilir.
+                    İşlem yapmak için <strong>senkronizasyon şifresi</strong> gereklidir.
+                </div>
+
+                <form asp-controller="Orders" asp-action="BackfillTransactions" method="post" class="mb-4"
+                      onsubmit="return confirm('Tüm aktif siparişler için eksik cari hareketleri OLUŞTURULACAK ve iptal edilen siparişler için cari hareket + stok çıkışları TEMİZLENECEK. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row align-items-end">
+                        <div class="col-md-6">
+                            <label><i class="fas fa-sync-alt mr-1"></i>Cari Hareketleri ve Stokları Senkronize Et</label>
+                            <small class="form-text text-muted mb-2">
+                                Onaylı siparişler için eksik cari borç hareketleri oluşturur, iptal edilen siparişlerin cari hareketlerini ve stok çıkışlarını temizler.
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Senkronizasyon Şifresi</label>
+                            <input type="password" name="syncPassword" class="form-control" placeholder="Şifre giriniz" autocomplete="off" required />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-sync-alt mr-1"></i> Senkronize Et
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <form asp-controller="PurchaseOrders" asp-action="BackfillTransactions" method="post" class="mb-4"
+                      onsubmit="return confirm('Tüm satın alma siparişleri için cari hareketler SIFIRDAN yeniden oluşturulacak. Onaylı/Kısmi/Tamamlanmış için sipariş tutarına eşit Alacak (tedarikçi borcu) hareketi olur. Taslak/İptal için ilgili cari hareket silinir. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row align-items-end">
+                        <div class="col-md-6">
+                            <label><i class="fas fa-truck-loading mr-1"></i>Satın Alma Cari Hareketlerini Düzelt</label>
+                            <small class="form-text text-muted mb-2">
+                                Tüm satın alma siparişlerinin ilgili cari hareketlerini siler ve sipariş tutarına göre yeniden oluşturur.
+                                Tutarsız/eksik cari hareketler bu işlemle düzelir. Stok girişlerine dokunulmaz.
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Senkronizasyon Şifresi</label>
+                            <input type="password" name="syncPassword" class="form-control" placeholder="Şifre giriniz" autocomplete="off" required />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-truck-loading mr-1"></i> Düzelt
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <form asp-controller="Orders" asp-action="BackfillCompletedAt" method="post" class="mb-4"
+                      onsubmit="return confirm('Tamamlandı durumundaki ama tamamlanma tarihi olmayan tüm siparişlere DeliveryDate (yoksa OrderDate) atanacak. Bu siparişler Ürün Satış Raporunda görünür hale gelecek. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row align-items-end">
+                        <div class="col-md-6">
+                            <label><i class="fas fa-calendar-check mr-1"></i>Tamamlanma Tarihlerini Düzelt (Ürün Satış Raporu)</label>
+                            <small class="form-text text-muted mb-2">
+                                Tamamlandı durumundaki ama tamamlanma tarihi (CompletedAt) olmayan siparişlere teslim/sipariş tarihini atar. Bu eksik tarih nedeniyle Ürün Satış Raporunda görünmeyen eski siparişler düzeltilir.
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Senkronizasyon Şifresi</label>
+                            <input type="password" name="syncPassword" class="form-control" placeholder="Şifre giriniz" autocomplete="off" required />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-calendar-check mr-1"></i> Tarihleri Düzelt
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <form asp-controller="Deliveries" asp-action="BackfillCompletedDeliveries" method="post" class="mb-4"
+                      onsubmit="return confirm('Tamamlanmış (Status=Tamamlandı) tüm siparişler için açık kalan kalemler varsa otomatik ONAYLI teslimat oluşturulacak. Teslim tarihi siparişin tamamlanma tarihine göre atanır. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row align-items-end">
+                        <div class="col-md-6">
+                            <label><i class="fas fa-truck mr-1"></i>Tamamlanmış Siparişler İçin Otomatik Teslimat Oluştur</label>
+                            <small class="form-text text-muted mb-2">
+                                Status'ü "Tamamlandı" olan ama teslimat formu olmayan eski siparişler için, kalan tüm kalemleri kapsayan
+                                <strong>onaylı teslimat formu</strong> otomatik oluşturulur. Teslim tarihi = siparişin tamamlanma tarihi.
+                                Zaten tam teslim edilmiş siparişler atlanır.
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Senkronizasyon Şifresi</label>
+                            <input type="password" name="syncPassword" class="form-control" placeholder="Şifre giriniz" autocomplete="off" required />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-success btn-block">
+                                <i class="fas fa-truck-loading mr-1"></i> Toplu Teslimat
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <form asp-controller="Orders" asp-action="ResetAndRecalculateStock" method="post" class="mb-4"
+                      onsubmit="return confirm('Sipariş kaynaklı stok hareketleri silinip yeniden hesaplanacak. Manuel hareketlere dokunulmaz. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row align-items-end">
+                        <div class="col-md-6">
+                            <label><i class="fas fa-eraser mr-1"></i>Sipariş Stok Hareketlerini Sıfırla & Yeniden Hesapla</label>
+                            <small class="form-text text-muted mb-2">
+                                Sadece sipariş kaynaklı otomatik stok çıkışlarını siler ve üretimde/tamamlanmış siparişlerden yeniden hesaplar.
+                                <strong class="text-success">Manuel girilen stok hareketlerine dokunmaz.</strong>
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Senkronizasyon Şifresi</label>
+                            <input type="password" name="syncPassword" class="form-control" placeholder="Şifre giriniz" autocomplete="off" required />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-eraser mr-1"></i> Stok Sıfırla
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <form asp-action="RecalculateCashBalances" method="post"
+                      onsubmit="return confirm('Tüm kasa bakiyeleri hareketlere göre yeniden hesaplanacak. Mevcut bakiyeler sıfırdan hesaplanıp düzeltilecek. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row align-items-end">
+                        <div class="col-md-6">
+                            <label><i class="fas fa-cash-register mr-1"></i>Kasa Bakiyelerini Düzelt</label>
+                            <small class="form-text text-muted mb-2">
+                                Tüm kasaların bakiyelerini mevcut hareketlerden (giriş - çıkış) yeniden hesaplar. Tutarsız bakiyeleri düzeltir.
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Senkronizasyon Şifresi</label>
+                            <input type="password" name="syncPassword" class="form-control" placeholder="Şifre giriniz" autocomplete="off" required />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-calculator mr-1"></i> Kasa Düzelt
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        $('#logoFile').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').html(fileName);
+        });
+    });
+    </script>
+}

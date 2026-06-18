@@ -1,0 +1,261 @@
+@model GlassSoft.Application.DTOs.Output.PrintTemplateUpdateDto
+@{
+    ViewData["Title"] = "Şablon Düzenle";
+    ViewData["Breadcrumb"] = "Yazdır Şablonları";
+}
+
+<form asp-action="Edit" method="post" id="templateForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+
+    <!-- Üst: Şablon bilgileri -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Şablon Düzenle</h3>
+        </div>
+        <div class="card-body pb-2">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Şablon Adı <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" required />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Çıktı Türü</label>
+                        <select asp-for="OutputType" class="form-control" id="outputTypeSelect">
+                            <option value="0">Sipariş</option>
+                            <option value="1">Teslimat</option>
+                            <option value="2">Üretim</option>
+                            <option value="3">Cari Hareketleri</option>
+                            <option value="4">Cari Ekstre</option>
+                            <option value="5">Çıta Raporu</option>
+                            <option value="6">Fiyatsız Sipariş</option>
+                            <option value="7">Etiket</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Açıklama</label>
+                        <input asp-for="Description" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <div class="custom-control custom-switch mt-2">
+                            <input type="checkbox" class="custom-control-input" id="isDefault" asp-for="IsDefault">
+                            <label class="custom-control-label" for="isDefault">Varsayılan</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="btn-group mr-3">
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="collapse" data-target="#gallerySection">
+                            <i class="fas fa-palette mr-1"></i> Hazır Tasarımla Değiştir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hazır Tasarım Galerisi (Kapalı) -->
+    <div class="collapse" id="gallerySection">
+        <div class="card card-outline card-warning">
+            <div class="card-body">
+                <div class="alert alert-warning py-2 mb-3">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Bir tasarım seçip "Uygula" derseniz mevcut HTML içeriğiniz değişecektir.
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label><i class="fas fa-file-alt mr-1"></i> Galeri Türü</label>
+                        <select class="form-control form-control-sm" id="galleryType">
+                            <option value="0">Sipariş Fişi</option>
+                            <option value="1">Teslimat İrsaliyesi</option>
+                            <option value="2">Üretim Emri</option>
+                            <option value="3">Cari Hareket</option>
+                            <option value="4">Cari Ekstre</option>
+                            <option value="5">Çıta Raporu</option>
+                            <option value="6">Fiyatsız Sipariş</option>
+                            <option value="7">Etiket</option>
+                        </select>
+                    </div>
+                    <div class="col-md-9">
+                        <label><i class="fas fa-swatchbook mr-1"></i> Tasarım Stili</label>
+                        <div class="d-flex" id="styleCards">
+                            <div class="card gallery-style-card active mr-2" data-style="Modern" style="cursor:pointer;min-width:100px;">
+                                <div class="card-body text-center p-2">
+                                    <i class="fas fa-gem text-primary"></i><br><small>Modern</small>
+                                </div>
+                            </div>
+                            <div class="card gallery-style-card mr-2" data-style="Klasik" style="cursor:pointer;min-width:100px;">
+                                <div class="card-body text-center p-2">
+                                    <i class="fas fa-landmark text-warning"></i><br><small>Klasik</small>
+                                </div>
+                            </div>
+                            <div class="card gallery-style-card" data-style="Minimal" style="cursor:pointer;min-width:100px;">
+                                <div class="card-body text-center p-2">
+                                    <i class="fas fa-feather-alt text-success"></i><br><small>Minimal</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small"><i class="fas fa-eye mr-1"></i> Önizleme</span>
+                        <button type="button" class="btn btn-warning btn-sm" id="btnUseTemplate">
+                            <i class="fas fa-exchange-alt mr-1"></i> Bu Tasarımı Uygula
+                        </button>
+                    </div>
+                    <iframe id="galleryPreviewFrame" style="width:100%; height:400px; border:1px solid #ddd; background:#fff;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editör: Sadece HTML modu (düzenlemede görsel editör uyumlu değil, mevcut HTML parse edilemez) -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header py-2">
+                    <h3 class="card-title small"><i class="fas fa-code mr-1"></i> HTML İçerik</h3>
+                </div>
+                <div class="card-body p-2">
+                    <textarea asp-for="HtmlContent" class="form-control" rows="25"
+                              style="font-family: 'Courier New', monospace; font-size: 12px; tab-size: 4; background: #1e1e1e; color: #d4d4d4; border: 1px solid #444;"
+                              required></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header py-2">
+                    <h3 class="card-title small"><i class="fas fa-tags mr-1"></i> Kullanılabilir Alanlar</h3>
+                </div>
+                <div class="card-body p-2" style="max-height:400px; overflow-y:auto;">
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-mouse-pointer mr-1"></i> Tıklayarak editöre ekleyin:
+                    </p>
+                    <div id="placeholderBadges"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header py-2">
+                    <h3 class="card-title small"><i class="fas fa-eye mr-1"></i> Canlı Önizleme</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-info btn-xs" id="btnPreview"><i class="fas fa-sync"></i></button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <iframe id="previewFrame" style="width:100%; height:400px; border:none; background:#fff;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kaydet -->
+    <div class="card">
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Güncelle</button>
+            <a asp-action="Index" class="btn btn-secondary"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+        </div>
+    </div>
+</form>
+
+@section Styles {
+    <style>
+        .gallery-style-card { border: 2px solid transparent; transition: all 0.3s; }
+        .gallery-style-card.active { border-color: #ffc107 !important; box-shadow: 0 0 8px rgba(255,193,7,0.3); }
+        .gallery-style-card:hover { transform: translateY(-2px); }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        var selectedStyle = 'Modern';
+
+        function loadGalleryPreview() {
+            var type = $('#galleryType').val();
+            $.get('@Url.Action("GalleryTemplate", "PrintTemplates")', { type: type, style: selectedStyle }, function (html) {
+                var frame = document.getElementById('galleryPreviewFrame');
+                var doc = frame.contentDocument || frame.contentWindow.document;
+                doc.open(); doc.write(html); doc.close();
+            });
+        }
+
+        function loadPlaceholders() {
+            var type = $('#outputTypeSelect').val();
+            $.get('@Url.Action("Placeholders", "PrintTemplates")', { type: type }, function (data) {
+                var html = '';
+                data.forEach(function (p) {
+                    html += '<span class="badge badge-outline badge-info m-1 placeholder-badge" ' +
+                        'style="cursor:pointer;font-size:11px;padding:4px 6px;border:1px solid #17a2b8" ' +
+                        'data-placeholder="{{' + p + '}}">{{' + p + '}}</span>';
+                });
+                $('#placeholderBadges').html(html);
+            });
+        }
+
+        $(document).ready(function () {
+            loadPlaceholders();
+
+            // Galeri
+            $('#galleryType').on('change', loadGalleryPreview);
+            $(document).on('click', '.gallery-style-card', function () {
+                $('.gallery-style-card').removeClass('active');
+                $(this).addClass('active');
+                selectedStyle = $(this).data('style');
+                loadGalleryPreview();
+            });
+            $('#gallerySection').on('shown.bs.collapse', loadGalleryPreview);
+
+            // Tasarımı uygula
+            $('#btnUseTemplate').on('click', function () {
+                if (!confirm('Mevcut HTML içeriğiniz değişecektir. Devam?')) return;
+                var type = $('#galleryType').val();
+                $.get('@Url.Action("GalleryTemplate", "PrintTemplates")', { type: type, style: selectedStyle }, function (html) {
+                    $('#HtmlContent').val(html);
+                    $('#outputTypeSelect').val(type).trigger('change');
+                    $('#btnPreview').click();
+                    toastr.success(selectedStyle + ' tasarım uygulandı!');
+                    $('#gallerySection').collapse('hide');
+                });
+            });
+
+            // Çıktı türü değişince
+            $('#outputTypeSelect').on('change', loadPlaceholders);
+
+            // Placeholder tıklama
+            $(document).on('click', '.placeholder-badge', function () {
+                var ph = $(this).data('placeholder');
+                var textarea = document.getElementById('HtmlContent');
+                var start = textarea.selectionStart;
+                var end = textarea.selectionEnd;
+                var text = textarea.value;
+                textarea.value = text.substring(0, start) + ph + text.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + ph.length;
+                textarea.focus();
+            });
+
+            // Önizleme
+            $('#btnPreview').on('click', function () {
+                var html = $('#HtmlContent').val();
+                var frame = document.getElementById('previewFrame');
+                var doc = frame.contentDocument || frame.contentWindow.document;
+                doc.open(); doc.write(html); doc.close();
+            });
+
+            // Başlangıçta önizleme
+            setTimeout(function () { $('#btnPreview').click(); }, 500);
+        });
+    </script>
+}

@@ -1,0 +1,243 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Accounting.ExpenseDto>
+@{
+    ViewData["Title"] = "Giderler";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+    var categorySummary = ViewBag.CategorySummary as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
+    var isFiltered = (bool)(ViewBag.IsFiltered ?? false);
+    var startDate = ViewBag.StartDate as string;
+    var endDate = ViewBag.EndDate as string;
+    var selectedCategory = ViewBag.SelectedCategory as int?;
+    var search = ViewBag.Search as string;
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<!-- Aktif Filtre Bilgisi -->
+@if (isFiltered)
+{
+    <div class="callout callout-info">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-filter mr-1"></i> <strong>Aktif Filtre:</strong>
+                @if (!string.IsNullOrEmpty(startDate) || !string.IsNullOrEmpty(endDate))
+                {
+                    <span class="badge badge-primary ml-1">
+                        <i class="fas fa-calendar mr-1"></i>
+                        @(startDate ?? "...") - @(endDate ?? "...")
+                    </span>
+                }
+                @if (selectedCategory.HasValue)
+                {
+                    <span class="badge badge-warning ml-1">
+                        <i class="fas fa-tag mr-1"></i>Kategori filtreli
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(search))
+                {
+                    <span class="badge badge-success ml-1">
+                        <i class="fas fa-search mr-1"></i>"@search"
+                    </span>
+                }
+                <span class="ml-2 text-muted">@ViewBag.FilteredCount kayit bulundu</span>
+            </div>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times mr-1"></i>Filtreyi Temizle</a>
+        </div>
+    </div>
+}
+
+<!-- Ozet Kartlari -->
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>@(((decimal)(ViewBag.TotalTRY ?? 0m)).ToString("N2"))</h3>
+                <p>@(isFiltered ? "Filtrelenmis Toplam (TRY)" : "Toplam Gider (TRY)")</p>
+            </div>
+            <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>@(((decimal)(ViewBag.MonthlyTotal ?? 0m)).ToString("N2"))</h3>
+                <p>Bu Ay Gider (TRY)</p>
+            </div>
+            <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@Model.Count()</h3>
+                <p>@(isFiltered ? "Filtrelenmis Kayit" : "Kayit Sayisi")</p>
+            </div>
+            <div class="icon"><i class="fas fa-receipt"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-secondary">
+            <div class="inner">
+                <h3>@(categorySummary.Count)</h3>
+                <p>Kategori</p>
+            </div>
+            <div class="icon"><i class="fas fa-tags"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Dagilimi -->
+@if (categorySummary.Any())
+{
+    <div class="card collapsed-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Yillik Kategori Dagilimi (@DateTime.Now.Year)</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+            </div>
+        </div>
+        <div class="card-body" style="display:none;">
+            <div class="row">
+                @foreach (var cat in categorySummary.OrderByDescending(c => c.Value))
+                {
+                    var total = categorySummary.Values.Sum();
+                    var pct = total > 0 ? (cat.Value / total * 100) : 0;
+                    <div class="col-md-4 col-sm-6">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-danger"><i class="fas fa-tag"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">@cat.Key</span>
+                                <span class="info-box-number">@cat.Value.ToString("N2") TRY</span>
+                                <div class="progress"><div class="progress-bar bg-danger" style="width: @pct.ToString("F0")%"></div></div>
+                                <span class="progress-description">%@pct.ToString("F1")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Filtre -->
+<div class="card @(isFiltered ? "" : "collapsed-card")">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filtre</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-@(isFiltered ? "minus" : "plus")"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body" @(isFiltered ? "" : "style=display:none")>
+        <form method="get" class="form-inline flex-wrap">
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Arama:</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Baslik veya aciklama ara..." value="@search" style="min-width:200px;" />
+            </div>
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Kategori:</label>
+                @Html.DropDownList("category", new SelectList(new[] {
+                    new { Value = "", Text = "Tümü" },
+                    new { Value = "0", Text = "Kira" },
+                    new { Value = "1", Text = "Fatura" },
+                    new { Value = "2", Text = "Maaş" },
+                    new { Value = "3", Text = "Malzeme" },
+                    new { Value = "4", Text = "Ulaşım" },
+                    new { Value = "5", Text = "Yemek" },
+                    new { Value = "6", Text = "Bakım/Onarım" },
+                    new { Value = "7", Text = "Vergi" },
+                    new { Value = "8", Text = "Sigorta" },
+                    new { Value = "9", Text = "Diğer" },
+                    new { Value = "10", Text = "Yakıt" }
+                }, "Value", "Text", selectedCategory?.ToString() ?? ""),
+                new { @class = "form-control form-control-sm no-select2" })
+            </div>
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Baslangic:</label>
+                <input type="date" name="startDate" class="form-control form-control-sm" value="@startDate" />
+            </div>
+            <div class="form-group mr-2 mb-2">
+                <label class="mr-1">Bitis:</label>
+                <input type="date" name="endDate" class="form-control form-control-sm" value="@endDate" />
+            </div>
+            <button type="submit" class="btn btn-info btn-sm mr-2 mb-2"><i class="fas fa-search mr-1"></i> Filtrele</button>
+            <a asp-action="Index" class="btn btn-secondary btn-sm mb-2"><i class="fas fa-times mr-1"></i> Temizle</a>
+        </form>
+    </div>
+</div>
+
+<!-- Gider Listesi -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-money-bill-wave mr-2"></i>Gider Kayitlari</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Gider
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblExpenses" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Baslik</th>
+                    <th>Kategori</th>
+                    <th>Odeme Tipi</th>
+                    <th>Tutar</th>
+                    <th>Para Birimi</th>
+                    <th>Tutar (TRY)</th>
+                    <th>Fis No</th>
+                    <th>Islemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-order="@item.ExpenseDate.ToString("yyyy-MM-dd")">@item.ExpenseDate.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            <strong>@item.Title</strong>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <br /><small class="text-muted">@item.Description</small>
+                            }
+                        </td>
+                        <td><span class="badge @item.CategoryBadgeClass">@item.CategoryDisplay</span></td>
+                        <td>@item.PaymentTypeDisplay</td>
+                        <td class="text-right">@item.Amount.ToString("N2")</td>
+                        <td><span class="badge badge-info">@item.Currency</span></td>
+                        <td class="text-right"><strong>@item.AmountTRY.ToString("N2")</strong></td>
+                        <td>@(item.ReceiptNo ?? "-")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline"
+                                  onsubmit="return confirm('Bu gider kaydini silmek istediginize emin misiniz?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="bg-dark">
+                    <th colspan="4" class="text-right">@(isFiltered ? "Filtrelenmis Toplam:" : "Genel Toplam:")</th>
+                    <th class="text-right">@Model.Sum(e => e.Amount).ToString("N2")</th>
+                    <th></th>
+                    <th class="text-right"><strong>@Model.Sum(e => e.AmountTRY).ToString("N2")</strong></th>
+                    <th colspan="2"></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblExpenses').DataTable({ "order": [[0, "desc"]], "pageLength": 25 }); });</script>
+}

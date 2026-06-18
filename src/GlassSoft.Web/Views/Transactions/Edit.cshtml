@@ -1,0 +1,154 @@
+@model GlassSoft.Application.DTOs.Accounting.AccountTransactionUpdateDto
+@{
+    ViewData["Title"] = "Cari Hareket Düzenle";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Cari Hareket Düzenle</h3>
+            </div>
+            <form asp-action="Edit" method="post" id="txForm">
+                <input type="hidden" asp-for="Id" />
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CustomerId">Müşteri</label>
+                                <select asp-for="CustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Type">İşlem Türü</label>
+                                <select asp-for="Type" class="form-control" required>
+                                    <option value="0">Borç</option>
+                                    <option value="1">Alacak</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="PaymentType">Ödeme Tipi</label>
+                                <select asp-for="PaymentType" class="form-control" required>
+                                    <option value="0">Nakit</option>
+                                    <option value="1">Havale</option>
+                                    <option value="2">Çek</option>
+                                    <option value="3">Senet</option>
+                                    <option value="4">Kredi Kartı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Amount">Tutar</label>
+                                <input asp-for="Amount" type="number" step="0.01" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Currency">Para Birimi</label>
+                                <select asp-for="Currency" class="form-control" id="currencySelect">
+                                    <option value="TRY">TRY</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="ExchangeRate">Döviz Kuru</label>
+                                <input asp-for="ExchangeRate" type="number" step="0.0001" class="form-control" id="exchangeRateInput" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="TransactionDate">İşlem Tarihi</label>
+                                <input asp-for="TransactionDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Kasa <span class="text-danger">*</span></label>
+                        <select name="cashRegisterId" class="form-control" id="cashRegisterSelect">
+                            <option value="">Kasa seçin...</option>
+                            @if (ViewBag.CashRegisters != null)
+                            {
+                                var currentId = ViewBag.CurrentCashRegisterId as int?;
+                                @foreach (var item in (SelectList)ViewBag.CashRegisters)
+                                {
+                                    if (currentId.HasValue && item.Value == currentId.Value.ToString())
+                                    {
+                                        <option value="@item.Value" selected>@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            }
+                        </select>
+                        <small class="text-muted">Kasa seçilirse Alacak → Giriş, Borç → Çıkış olarak kasaya yansır.</small>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Güncelle</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Bilgi</h3>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">Bu harekete bağlı bir kasa hareketi varsa, o da otomatik güncellenir.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        function toggleExchangeRate() {
+            if ($('#currencySelect').val() === 'TRY') {
+                $('#exchangeRateInput').val('1').prop('readonly', true);
+            } else {
+                $('#exchangeRateInput').prop('readonly', false);
+            }
+        }
+        $('#currencySelect').on('change', toggleExchangeRate);
+        toggleExchangeRate();
+
+        // Form submit: Kasa seçimi zorunlu
+        $('#txForm').on('submit', function(e) {
+            var kasa = $('#cashRegisterSelect').val();
+            if (!kasa || kasa === '') {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Kasa Seçmediniz!',
+                    text: 'Kasa seçmeden devam edemezsiniz. Lütfen bir kasa seçin.',
+                    confirmButtonText: 'Tamam'
+                }).then(function() {
+                    $('#cashRegisterSelect').focus();
+                });
+                return false;
+            }
+        });
+    });
+    </script>
+}

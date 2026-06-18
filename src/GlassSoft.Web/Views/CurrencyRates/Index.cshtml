@@ -1,0 +1,48 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Accounting.CurrencyRateDto>
+@{
+    ViewData["Title"] = "Döviz Kurları";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-coins mr-2"></i>Döviz Kurları</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Kur Girişi
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblCurrencyRates" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Para Birimi</th>
+                    <th>Alış Kuru</th>
+                    <th>Satış Kuru</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-order="@item.RateDate.ToString("yyyy-MM-dd")">@item.RateDate.ToString("dd.MM.yyyy")</td>
+                        <td><span class="badge badge-info">@item.CurrencyCode</span></td>
+                        <td class="text-right">@item.BuyRate.ToString("N4")</td>
+                        <td class="text-right">@item.SellRate.ToString("N4")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblCurrencyRates').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

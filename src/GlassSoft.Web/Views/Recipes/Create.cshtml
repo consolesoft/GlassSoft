@@ -1,0 +1,195 @@
+@model GlassSoft.Application.DTOs.Recipe.RecipeCreateDto
+@{
+    ViewData["Title"] = "Yeni Reçete";
+    ViewData["Breadcrumb"] = "Reçeteler";
+}
+
+<form asp-action="Create" method="post" id="recipeForm">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Genel Bilgiler -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Reçete</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Code">Reçete Kodu</label>
+                                <input asp-for="Code" class="form-control" placeholder="Örn: 4+12+4" required />
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label asp-for="Name">Reçete Adı</label>
+                                <input asp-for="Name" class="form-control" placeholder="Örn: 4mm Düz + 12mm Çıta + 4mm Düz Isıcam" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="BaseUnitPrice">Birim Fiyat (m²)</label>
+                                <input asp-for="BaseUnitPrice" type="number" step="0.01" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="ProductItemId">Bağlı Ürün</label>
+                                <select asp-for="ProductItemId" asp-items="@ViewBag.Products" class="form-control select2">
+                                    <option value="">Opsiyonel...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group pt-4">
+                                <div class="custom-control custom-switch">
+                                    <input asp-for="IsActive" class="custom-control-input" id="isActive" checked>
+                                    <label class="custom-control-label" for="isActive">Aktif</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Katmanlar -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-bars mr-2"></i>Katmanlar</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary btn-sm" id="btnAddLayer">
+                            <i class="fas fa-plus mr-1"></i> Katman Ekle
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0" id="tblLayers">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px">Sıra</th>
+                                <th style="width: 140px">Tip</th>
+                                <th>Ürün</th>
+                                <th style="width: 120px">Kalınlık (mm)</th>
+                                <th style="width: 100px">Adet</th>
+                                <th style="width: 50px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="layersBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sarf Malzemeler -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-flask mr-2"></i>Sarf Malzemeler</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-warning btn-sm" id="btnAddConsumable">
+                            <i class="fas fa-plus mr-1"></i> Sarf Ekle
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0" id="tblConsumables">
+                        <thead>
+                            <tr>
+                                <th>Malzeme</th>
+                                <th style="width: 200px">Formül</th>
+                                <th>Açıklama</th>
+                                <th style="width: 50px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="consumablesBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Bilgi</h3>
+                </div>
+                <div class="card-body">
+                    <p><strong>Katman Tipleri:</strong></p>
+                    <ul class="list-unstyled">
+                        <li><span class="badge badge-info">Cam</span> - Cam katmanı (4mm, 6mm vb.)</li>
+                        <li class="mt-1"><span class="badge badge-warning">Ara Parça</span> - Çıta, spacer vb.</li>
+                    </ul>
+                    <hr>
+                    <p><strong>Formül Değişkenleri:</strong></p>
+                    <ul class="list-unstyled small">
+                        <li><code>PERIMETER</code> - Çevre (metre)</li>
+                        <li><code>AREA</code> - Alan (m²)</li>
+                        <li><code>WIDTH</code> - Genişlik (metre)</li>
+                        <li><code>HEIGHT</code> - Yükseklik (metre)</li>
+                    </ul>
+                    <p class="small text-muted">Örn: <code>PERIMETER * 0.01</code></p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="fas fa-save mr-1"></i> Kaydet</button>
+            <a asp-action="Index" class="btn btn-secondary btn-block"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'default' });
+
+        var productOptions = '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(((SelectList)ViewBag.Products).Select(x => new { x.Value, x.Text })))';
+        var products = JSON.parse(productOptions);
+
+        function buildProductSelect(name, selectedId) {
+            var html = '<select name="' + name + '" class="form-control form-control-sm">';
+            html += '<option value="">Seçiniz...</option>';
+            products.forEach(function(p) {
+                var sel = (p.Value == selectedId) ? ' selected' : '';
+                html += '<option value="' + p.Value + '"' + sel + '>' + p.Text + '</option>';
+            });
+            html += '</select>';
+            return html;
+        }
+
+        var layerIndex = 0;
+        $('#btnAddLayer').click(function() {
+            var row = '<tr>' +
+                '<td><input type="number" name="Layers[' + layerIndex + '].SortOrder" class="form-control form-control-sm" value="' + (layerIndex + 1) + '" /></td>' +
+                '<td><select name="Layers[' + layerIndex + '].LayerType" class="form-control form-control-sm"><option value="Glass">Cam</option><option value="Spacer">Ara Parça</option></select></td>' +
+                '<td>' + buildProductSelect('Layers[' + layerIndex + '].ProductItemId', '') + '</td>' +
+                '<td><input type="number" name="Layers[' + layerIndex + '].ThicknessMm" step="0.1" class="form-control form-control-sm" /></td>' +
+                '<td><input type="number" name="Layers[' + layerIndex + '].QuantityPerUnit" class="form-control form-control-sm" value="1" /></td>' +
+                '<td><button type="button" class="btn btn-danger btn-xs btn-remove-row"><i class="fas fa-times"></i></button></td>' +
+                '</tr>';
+            $('#layersBody').append(row);
+            layerIndex++;
+        });
+
+        var consIndex = 0;
+        $('#btnAddConsumable').click(function() {
+            var row = '<tr>' +
+                '<td>' + buildProductSelect('Consumables[' + consIndex + '].ProductItemId', '') + '</td>' +
+                '<td><input type="text" name="Consumables[' + consIndex + '].ConsumptionFormula" class="form-control form-control-sm" placeholder="PERIMETER * 0.01" /></td>' +
+                '<td><input type="text" name="Consumables[' + consIndex + '].Description" class="form-control form-control-sm" /></td>' +
+                '<td><button type="button" class="btn btn-danger btn-xs btn-remove-row"><i class="fas fa-times"></i></button></td>' +
+                '</tr>';
+            $('#consumablesBody').append(row);
+            consIndex++;
+        });
+
+        $(document).on('click', '.btn-remove-row', function() {
+            $(this).closest('tr').remove();
+        });
+    });
+    </script>
+}

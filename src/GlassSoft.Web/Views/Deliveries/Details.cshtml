@@ -1,0 +1,140 @@
+@model GlassSoft.Application.DTOs.Sales.DeliveryDto
+@{
+    ViewData["Title"] = $"Teslimat: {Model.DeliveryNumber}";
+    ViewData["Breadcrumb"] = "Satış";
+    var templateId = (int)ViewBag.PrintTemplateId;
+}
+
+<div class="row">
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-truck mr-2"></i>Teslimat:
+                    <strong>@Model.DeliveryNumber</strong>
+                    <span class="badge @Model.StatusBadgeClass ml-2">@Model.StatusDisplay</span>
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Sipariş:</strong> <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.OrderId">@Model.OrderNumber</a></div>
+                    <div class="col-md-4"><strong>Müşteri:</strong> @Model.CustomerTitle</div>
+                    <div class="col-md-3"><strong>Teslim Tarihi:</strong> @Model.DeliveryDate.ToString("dd.MM.yyyy")</div>
+                    <div class="col-md-2">
+                        @if (Model.ApprovedAt.HasValue)
+                        {
+                            <strong>Onay:</strong> @Model.ApprovedAt.Value.ToString("dd.MM.yyyy HH:mm")
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="alert alert-light"><strong>Not:</strong> @Model.Notes</div>
+                }
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:40px">#</th>
+                            <th>Poz</th>
+                            <th>Ürün / Reçete</th>
+                            <th class="text-right">En × Boy</th>
+                            <th class="text-right">Sipariş Adet</th>
+                            <th class="text-right">Teslim Edilen</th>
+                            <th class="text-right">m² (Bu Teslim)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int i = 1; }
+                        @foreach (var l in Model.Lines)
+                        {
+                            <tr>
+                                <td>@(i++)</td>
+                                <td>@(l.PozNo ?? "-")</td>
+                                <td>@l.ProductName</td>
+                                <td class="text-right">
+                                    @if (l.IsRetail)
+                                    {
+                                        <span class="text-muted">Perakende</span>
+                                    }
+                                    else
+                                    {
+                                        @($"{l.WidthMm}×{l.HeightMm}")
+                                    }
+                                </td>
+                                <td class="text-right">@l.OrderLineQuantity</td>
+                                <td class="text-right"><strong>@l.Quantity</strong></td>
+                                <td class="text-right">@l.TotalAreaM2.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" class="text-right"><strong>Toplam:</strong></td>
+                            <td class="text-right"><strong>@Model.TotalQuantity</strong></td>
+                            <td class="text-right"><strong>@Model.TotalAreaM2.ToString("N2") m²</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-cog mr-2"></i>İşlemler</h3>
+            </div>
+            <div class="card-body">
+                @if (Model.Status == GlassSoft.Domain.Enums.DeliveryStatus.Taslak)
+                {
+                    <form asp-action="Approve" asp-route-id="@Model.Id" method="post"
+                          onsubmit="return confirm('Teslimat onaylanacak. Onaylanan teslimat sipariş kalemlerini kullanır. Devam edilsin mi?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fas fa-check mr-1"></i> Onayla
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Unapprove" asp-route-id="@Model.Id" method="post"
+                          onsubmit="return confirm('Teslimat onayı geri alınacak (Taslağa düşecek). Devam edilsin mi?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning btn-block">
+                            <i class="fas fa-undo mr-1"></i> Onayı Geri Al
+                        </button>
+                    </form>
+                }
+
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-block mt-2">
+                    <i class="fas fa-edit mr-1"></i> Düzenle
+                </a>
+
+                @if (templateId > 0)
+                {
+                    <a href="@Url.Action("Render", "Output", new { type = (int)GlassSoft.Domain.Enums.OutputType.Teslimat, entityId = Model.Id, templateId = templateId, isDelivery = true })"
+                       target="_blank" class="btn btn-info btn-block mt-2">
+                        <i class="fas fa-print mr-1"></i> Yazdır
+                    </a>
+                    <a href="@Url.Action("Render", "Output", new { type = (int)GlassSoft.Domain.Enums.OutputType.Teslimat, entityId = Model.Id, templateId = templateId, isDelivery = true, priceless = true })"
+                       target="_blank" class="btn btn-outline-info btn-block mt-2">
+                        <i class="fas fa-print mr-1"></i> Fiyatsız Yazdır
+                    </a>
+                }
+
+                <hr>
+
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+                      onsubmit="return confirm('Teslimat SİLİNECEK. Onaylıysa miktarlar siparişe iade edilecek. Devam edilsin mi?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-block">
+                        <i class="fas fa-trash mr-1"></i> Sil
+                    </button>
+                </form>
+
+                <a asp-action="Index" class="btn btn-light btn-block mt-2">
+                    <i class="fas fa-arrow-left mr-1"></i> Listeye Dön
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

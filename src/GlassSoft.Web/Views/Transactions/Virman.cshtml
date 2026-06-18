@@ -1,0 +1,101 @@
+@{
+    ViewData["Title"] = "Virman (Cari → Cari Transfer)";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-exchange-alt mr-2"></i>Virman</h3>
+            </div>
+            <form asp-action="Virman" method="post">
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Kaynak Cari <span class="text-danger">*</span></label>
+                                <select name="sourceCustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                                <small class="text-muted">Bakiyesinden düşülecek cari (Alacak yazılır)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Hedef Cari <span class="text-danger">*</span></label>
+                                <select name="targetCustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                                <small class="text-muted">Bakiyesine eklenecek cari (Borç yazılır)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Tutar (TRY) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" name="amount" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>İşlem Tarihi <span class="text-danger">*</span></label>
+                                <input type="date" name="transactionDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Kasa (opsiyonel)</label>
+                                <select name="cashRegisterId" class="form-control no-select2">
+                                    <option value="">Kasa hareketi oluşturma</option>
+                                    @if (ViewBag.CashRegisters != null)
+                                    {
+                                        foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.CashRegisters)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Açıklama</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Virman açıklaması..."></textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-exchange-alt mr-1"></i> Virman Yap</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Nasıl Çalışır?</h3>
+            </div>
+            <div class="card-body">
+                <p class="small"><strong>Kaynak Cari:</strong> Alacak hareketi yazılır → bakiyesi <span class="text-success">azalır</span>.</p>
+                <p class="small"><strong>Hedef Cari:</strong> Borç hareketi yazılır → bakiyesi <span class="text-danger">artar</span>.</p>
+                <hr>
+                <p class="small"><strong>Kasa Seçilirse:</strong> Aynı kasada bir Giriş + bir Çıkış oluşturulur (net etkisi sıfır, hareketler izlenebilir).</p>
+                <p class="small text-muted">Örnek: Müşteri A'dan tahsil edilen tutarın, Müşteri B'nin borcuna mahsup edilmesi.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() { $('.select2').select2({ theme: 'bootstrap4' }); });
+    </script>
+}

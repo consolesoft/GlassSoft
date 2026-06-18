@@ -1,0 +1,117 @@
+@model List<GlassSoft.Application.DTOs.Product.StockEntryDto>
+@{
+    ViewData["Title"] = "Stok Hareket Raporu";
+    ViewData["Breadcrumb"] = "Raporlar";
+    var start = (DateTime)ViewBag.StartDate;
+    var end = (DateTime)ViewBag.EndDate;
+}
+
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-boxes mr-2"></i>Stok Hareket Raporu</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="form-inline mb-3">
+            <label class="mr-2">Başlangıç:</label>
+            <input type="date" name="startDate" value="@start.ToString("yyyy-MM-dd")" class="form-control mr-2" />
+            <label class="mr-2">Bitiş:</label>
+            <input type="date" name="endDate" value="@end.ToString("yyyy-MM-dd")" class="form-control mr-2" />
+            <label class="mr-2">Tür:</label>
+            @Html.DropDownList("movementType", (SelectList)ViewBag.TypeList, new { @class = "form-control no-select2 mr-2" })
+            <label class="mr-2">Ürün:</label>
+            @Html.DropDownList("productItemId", (SelectList)ViewBag.ProductList, new { @class = "form-control mr-2" })
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i> Filtrele</button>
+        </form>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="info-box bg-success">
+                    <span class="info-box-icon"><i class="fas fa-arrow-down"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Giriş Sayısı</span>
+                        <span class="info-box-number">@ViewBag.GirisCount</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-box bg-danger">
+                    <span class="info-box-icon"><i class="fas fa-arrow-up"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Çıkış Sayısı</span>
+                        <span class="info-box-number">@ViewBag.CikisCount</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-box bg-info">
+                    <span class="info-box-icon"><i class="fas fa-plus"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Giriş Miktar</span>
+                        <span class="info-box-number">@(((decimal)ViewBag.GirisM2).ToString("N2"))</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-box bg-warning">
+                    <span class="info-box-icon"><i class="fas fa-minus"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Çıkış Miktar</span>
+                        <span class="info-box-number">@(((decimal)ViewBag.CikisM2).ToString("N2"))</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table id="tbl" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Ürün</th>
+                    <th>Tür</th>
+                    <th class="text-right">Miktar</th>
+                    <th class="text-right">Tabaka</th>
+                    <th>Tabaka Ölçü</th>
+                    <th>Referans</th>
+                    <th>Açıklama</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    <tr>
+                        <td data-order="@e.CreatedAt.ToString("yyyy-MM-dd HH:mm")">@e.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@e.ProductItemName</td>
+                        <td>
+                            @if (e.MovementType == GlassSoft.Domain.Enums.StockMovementType.Giris)
+                            {
+                                <span class="badge badge-success">Giriş</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Çıkış</span>
+                            }
+                        </td>
+                        <td class="text-right">@e.Quantity.ToString("N2")</td>
+                        <td class="text-right">@(e.PlateCount > 0 ? e.PlateCount.ToString() : "-")</td>
+                        <td>@(e.PlateDefinitionDisplay ?? "-")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(e.ReferenceType) && e.ReferenceType != "Manual")
+                            {
+                                <small class="text-muted">@e.ReferenceType #@e.ReferenceId</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Manuel</span>
+                            }
+                        </td>
+                        <td><small>@(e.Description ?? "-")</small></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tbl').DataTable({ "order": [[0, "desc"]], "pageLength": 50 }); });</script>
+}

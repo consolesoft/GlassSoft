@@ -1,0 +1,96 @@
+@model IEnumerable<GlassSoft.Web.Models.User.UserListViewModel>
+@{
+    ViewData["Title"] = "Kullanıcılar";
+    ViewData["Breadcrumb"] = "Yönetim";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users mr-2"></i>Kullanıcılar</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Kullanıcı
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblUsers" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Ad Soyad</th>
+                    <th>E-posta</th>
+                    <th>Roller</th>
+                    <th>Durum</th>
+                    <th>Son Giriş</th>
+                    <th style="width: 100px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.FullName</strong></td>
+                        <td>@item.Email</td>
+                        <td>
+                            @if (item.Roles.Any())
+                            {
+                                @foreach (var role in item.Roles)
+                                {
+                                    <span class="badge badge-info mr-1">@role</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Rol Yok</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="badge badge-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Pasif</span>
+                            }
+                        </td>
+                        <td data-order="@(item.LastLoginAt?.ToString("yyyy-MM-dd HH:mm") ?? "")">
+                            @if (item.LastLoginAt.HasValue)
+                            {
+                                @item.LastLoginAt.Value.ToString("dd.MM.yyyy HH:mm")
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs btn-delete" title="Devre Dışı Bırak">
+                                    <i class="fas fa-user-slash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblUsers').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

@@ -1,0 +1,66 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Accounting.ChequeNoteDto>
+@{
+    ViewData["Title"] = "Çek/Senet Takibi";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-money-check-alt mr-2"></i>Çek/Senet Takibi</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Çek/Senet
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblChequeNotes" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Tür</th>
+                    <th>Belge No</th>
+                    <th>Müşteri</th>
+                    <th>Tutar</th>
+                    <th>Para Birimi</th>
+                    <th>Vade Tarihi</th>
+                    <th>Durum</th>
+                    <th style="width: 80px">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><span class="badge @item.TypeBadgeClass">@item.TypeDisplay</span></td>
+                        <td><strong>@(item.DocumentNumber ?? "-")</strong></td>
+                        <td>@item.CustomerTitle</td>
+                        <td class="text-right">@item.Amount.ToString("N2")</td>
+                        <td><span class="badge badge-info">@item.Currency</span></td>
+                        <td data-order="@item.DueDate.ToString("yyyy-MM-dd")">
+                            @item.DueDate.ToString("dd.MM.yyyy")
+                            @if (item.DueDate < DateTime.Now && item.Status == GlassSoft.Domain.Enums.ChequeNoteStatus.Portfoyde)
+                            {
+                                <span class="badge badge-danger ml-1">Vadesi Geçmiş</span>
+                            }
+                        </td>
+                        <td><span class="badge @item.StatusBadgeClass">@item.StatusDisplay</span></td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detay">
+                                <i class="fas fa-eye mr-1"></i> Detay
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblChequeNotes').DataTable({ "order": [[5, "desc"]] }); });</script>
+}

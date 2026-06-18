@@ -1,0 +1,91 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Production.WorkOrderDto>
+@{
+    ViewData["Title"] = "İş Emirleri";
+    ViewData["Breadcrumb"] = "Üretim & Kesim";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-industry mr-2"></i>İş Emirleri</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni İş Emri
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblWorkOrders" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>İş Emri No</th>
+                    <th>Siparişler</th>
+                    <th>Planlanan Tarih</th>
+                    <th>Malzeme</th>
+                    <th>Kesim Planı</th>
+                    <th>Durum</th>
+                    <th style="width: 80px">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.WorkOrderNumber</strong></td>
+                        <td>
+                            @if (item.RelatedOrders.Any())
+                            {
+                                @foreach (var ro in item.RelatedOrders)
+                                {
+                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@ro.OrderId"
+                                       class="badge badge-info mr-1" title="@ro.CustomerTitle">@ro.OrderNumber</a>
+                                }
+                            }
+                            else if (item.OrderId > 0)
+                            {
+                                <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.OrderId"
+                                   class="badge badge-info">@item.OrderNumber</a>
+                                <small class="text-muted ml-1">@item.CustomerTitle</small>
+                            }
+                        </td>
+                        <td data-order="@item.PlannedDate.ToString("yyyy-MM-dd")">@item.PlannedDate.ToString("dd.MM.yyyy")</td>
+                        <td class="text-center"><span class="badge badge-primary">@item.LineCount satır</span></td>
+                        <td class="text-center">
+                            @if (item.CuttingPlanCount > 0)
+                            {
+                                <span class="badge badge-success">@item.CuttingPlanCount plan</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Bekliyor</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsCompleted)
+                            {
+                                <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Tamamlandı</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Devam Ediyor</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detay">
+                                <i class="fas fa-eye mr-1"></i> Detay
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblWorkOrders').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

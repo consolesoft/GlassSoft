@@ -1,0 +1,211 @@
+@model GlassSoft.Application.DTOs.Purchasing.PurchaseOrderCreateDto
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Yeni Satın Alma Siparişi";
+    ViewData["Breadcrumb"] = "Satın Alma";
+}
+
+<form asp-action="Create" method="post" id="purchaseOrderForm">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Sipariş Bilgileri -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Satın Alma Siparişi</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CustomerId">Cari (Tedarikçi)</label>
+                                <select asp-for="CustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Currency">Para Birimi</label>
+                                <select asp-for="Currency" class="form-control select2">
+                                    <option value="TRY">₺ TRY</option>
+                                    <option value="USD">$ USD</option>
+                                    <option value="EUR">€ EUR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="TaxRate">KDV Oranı</label>
+                                <select asp-for="TaxRate" class="form-control select2" id="taxRateSelect">
+                                    <option value="0">KDV Yok</option>
+                                    <option value="1">%1</option>
+                                    <option value="10">%10</option>
+                                    <option value="20">%20</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="OrderDate">Sipariş Tarihi</label>
+                                <input asp-for="OrderDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label asp-for="Notes">Notlar</label>
+                                <input asp-for="Notes" class="form-control" placeholder="Sipariş notu..." />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sipariş Kalemleri -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list mr-2"></i>Sipariş Kalemleri</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary btn-sm" id="btnAddLine" title="Son satırda ↓ ile de ekleyebilirsiniz">
+                            <i class="fas fa-plus mr-1"></i> Kalem Ekle <kbd class="ml-1" style="font-size:0.7em">↓</kbd>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0" id="tblLines">
+                        <thead>
+                            <tr>
+                                <th>Ürün</th>
+                                <th style="width: 120px">Miktar</th>
+                                <th style="width: 140px">Birim Fiyat</th>
+                                <th style="width: 140px">Toplam</th>
+                                <th style="width: 50px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="3" class="text-right">Ara Toplam:</th>
+                                <th class="text-right" id="subTotal">0,00</th>
+                                <th></th>
+                            </tr>
+                            <tr>
+                                <th colspan="3" class="text-right" id="taxLabel">KDV (%20):</th>
+                                <th class="text-right" id="taxTotal">0,00</th>
+                                <th></th>
+                            </tr>
+                            <tr class="bg-primary">
+                                <th colspan="3" class="text-right">Genel Toplam:</th>
+                                <th class="text-right" id="grandTotal">0,00</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Bilgi</h3>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Tedarikçi carisi seçip sipariş kalemlerini ekleyin.</p>
+                    <p class="small text-muted">Onay sonrası otomatik <strong>stok girişi</strong> ve <strong>cari borç kaydı</strong> oluşturulur.</p>
+                    <p class="small text-muted">Son satırda <kbd>↓</kbd> ile yeni kalem, <kbd>Shift+↓</kbd> ile kopyalayın.</p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg"><i class="fas fa-save mr-1"></i> Kaydet</button>
+            <a asp-action="Index" class="btn btn-secondary btn-block"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'default' });
+
+        var productsJson = '@Html.Raw(System.Text.Json.JsonSerializer.Serialize(((SelectList)ViewBag.Products).Select(x => new { x.Value, x.Text })))';
+        var products = JSON.parse(productsJson);
+
+        function buildProductSelect(name, selectedId) {
+            var html = '<select class="form-control form-control-sm product-select" name="' + name + '" required>';
+            html += '<option value="">Seçiniz...</option>';
+            products.forEach(function(p) {
+                var sel = (p.Value == selectedId) ? ' selected' : '';
+                html += '<option value="' + p.Value + '"' + sel + '>' + p.Text + '</option>';
+            });
+            html += '</select>';
+            return html;
+        }
+
+        var lineIndex = 0;
+
+        function recalcTotals() {
+            var sub = 0;
+            $('#linesBody tr').each(function() {
+                var qty = parseFloat($(this).find('.line-qty').val()) || 0;
+                var price = parseFloat($(this).find('.line-price').val()) || 0;
+                var total = qty * price;
+                $(this).find('.line-total').text(total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                sub += total;
+            });
+            var taxRate = parseInt($('#taxRateSelect').val()) || 0;
+            var tax = sub * taxRate / 100;
+            var grand = sub + tax;
+            $('#subTotal').text(sub.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#taxLabel').text('KDV (%' + taxRate + '):');
+            $('#taxTotal').text(tax.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#grandTotal').text(grand.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        }
+
+        function addLine(productId, qty, price) {
+            var row = '<tr>' +
+                '<td>' + buildProductSelect('Lines[' + lineIndex + '].ProductItemId', productId) + '</td>' +
+                '<td><input type="number" name="Lines[' + lineIndex + '].Quantity" step="0.01" class="form-control form-control-sm line-qty" placeholder="0" value="' + qty + '" /></td>' +
+                '<td><input type="number" name="Lines[' + lineIndex + '].UnitPrice" step="0.01" class="form-control form-control-sm line-price" placeholder="0.00" value="' + price + '" /></td>' +
+                '<td class="text-right line-total" style="vertical-align: middle;">0,00</td>' +
+                '<td><button type="button" class="btn btn-danger btn-xs btn-remove-row"><i class="fas fa-times"></i></button></td>' +
+                '</tr>';
+            $('#linesBody').append(row);
+            lineIndex++;
+            recalcTotals();
+        }
+
+        $('#btnAddLine').click(function() { addLine('', '', ''); });
+
+        // TaxRate select2 change - select2 için özel event
+        $('#taxRateSelect').on('change', recalcTotals);
+        $('[name="TaxRate"]').on('select2:select', function() { recalcTotals(); });
+
+        $(document).on('input', '.line-qty, .line-price', function() { recalcTotals(); });
+        $(document).on('click', '.btn-remove-row', function() {
+            $(this).closest('tr').remove();
+            recalcTotals();
+        });
+
+        // Kısayol: Son satırda ↓ yeni kalem, Shift+↓ kopyala
+        $(document).on('keydown', function(e) {
+            if (e.key === 'ArrowDown' && !e.ctrlKey && !e.altKey && !$(e.target).is('select')) {
+                var $row = $(document.activeElement).closest('#linesBody tr');
+                if ($row.length && $row.is('#linesBody tr:last')) {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        var qty = $row.find('.line-qty').val() || '';
+                        var price = $row.find('.line-price').val() || '';
+                        var pid = $row.find('.product-select').val() || '';
+                        addLine(pid, qty, price);
+                    } else {
+                        addLine('', '', '');
+                    }
+                }
+            }
+        });
+    });
+    </script>
+}

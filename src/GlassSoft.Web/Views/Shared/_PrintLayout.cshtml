@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GLASSOFT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #fff; color: #000; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        .no-print {
+            background: #343a40; color: #fff; padding: 10px 20px; text-align: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .no-print button {
+            background: #17a2b8; color: #fff; border: none; padding: 8px 20px;
+            border-radius: 4px; cursor: pointer; margin: 0 5px; font-size: 14px;
+        }
+        .no-print button:hover { opacity: 0.85; }
+        .no-print .btn-close { background: #6c757d; }
+        .print-content { padding: 10px; }
+        table { border-collapse: collapse; width: 100%; }
+        table th, table td { padding: 6px 10px; border: 1px solid #ddd; }
+        @@media print {
+            .no-print { display: none !important; }
+            .print-content { padding: 0; }
+            @@page { size: A4; margin: 15mm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()"><i class="fas fa-print"></i> Yazdır</button>
+        <button class="btn-close" onclick="window.close()"><i class="fas fa-times"></i> Kapat</button>
+    </div>
+    <div class="print-content">
+        @RenderBody()
+    </div>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

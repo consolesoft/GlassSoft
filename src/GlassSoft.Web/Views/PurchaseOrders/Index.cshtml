@@ -1,0 +1,60 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Purchasing.PurchaseOrderDto>
+@{
+    ViewData["Title"] = "Satın Alma Siparişleri";
+    ViewData["Breadcrumb"] = "Satın Alma";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-file-invoice mr-2"></i>Satın Alma Siparişleri</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Sipariş
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblPurchaseOrders" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Sipariş No</th>
+                    <th>Cari</th>
+                    <th>Tarih</th>
+                    <th>Kalem</th>
+                    <th>Tutar</th>
+                    <th>KDV</th>
+                    <th>Durum</th>
+                    <th style="width: 80px">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.OrderNumber</strong></td>
+                        <td>@item.CustomerTitle</td>
+                        <td data-order="@item.OrderDate.ToString("yyyy-MM-dd")">@item.OrderDate.ToString("dd.MM.yyyy")</td>
+                        <td class="text-center">@item.LineCount</td>
+                        <td class="text-right"><strong>@item.GrandTotal.ToString("N2")</strong> @item.Currency</td>
+                        <td class="text-center"><span class="badge badge-info">%@item.TaxRate</span></td>
+                        <td><span class="badge @item.StatusBadgeClass">@item.StatusDisplay</span></td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detay">
+                                <i class="fas fa-eye mr-1"></i> Detay
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblPurchaseOrders').DataTable({ order: [[2, 'desc']] }); });</script>
+}

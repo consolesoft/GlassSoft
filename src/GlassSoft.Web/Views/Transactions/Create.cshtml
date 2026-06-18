@@ -1,0 +1,189 @@
+@model GlassSoft.Application.DTOs.Accounting.AccountTransactionCreateDto
+@{
+    ViewData["Title"] = "Yeni Cari Hareket";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Cari Hareket</h3>
+            </div>
+            <form asp-action="Create" method="post" id="txForm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CustomerId">Müşteri</label>
+                                <select asp-for="CustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Type">İşlem Türü</label>
+                                <select asp-for="Type" class="form-control" required>
+                                    <option value="0">Borç</option>
+                                    <option value="1">Alacak</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="PaymentType">Ödeme Tipi</label>
+                                <select asp-for="PaymentType" class="form-control" required>
+                                    <option value="0">Nakit</option>
+                                    <option value="1">Havale</option>
+                                    <option value="2">Çek</option>
+                                    <option value="3">Senet</option>
+                                    <option value="4">Kredi Kartı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Amount">Tutar</label>
+                                <input asp-for="Amount" type="number" step="0.01" class="form-control" placeholder="0.00" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="Currency">Para Birimi</label>
+                                <select asp-for="Currency" class="form-control" id="currencySelect">
+                                    <option value="TRY">TRY - Türk Lirası</option>
+                                    <option value="USD">USD - Amerikan Doları</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="ExchangeRate">Döviz Kuru</label>
+                                <input asp-for="ExchangeRate" type="number" step="0.0001" class="form-control" id="exchangeRateInput" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="TransactionDate">İşlem Tarihi</label>
+                                <input asp-for="TransactionDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="cashRegisterRow">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label id="cashRegisterLabel">Kasa (Otomatik Çıkış - Tediye) <span class="text-danger">*</span></label>
+                                <select name="cashRegisterId" class="form-control" id="cashRegisterSelect">
+                                    <option value="">Kasa seçin...</option>
+                                    @if (ViewBag.CashRegisters != null)
+                                    {
+                                        @foreach (var item in (SelectList)ViewBag.CashRegisters)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div class="custom-control custom-checkbox mt-2">
+                                    <input type="checkbox" class="custom-control-input" id="isOpeningBalance" name="isOpeningBalance" value="true">
+                                    <label class="custom-control-label" for="isOpeningBalance">
+                                        <strong>Cari Hesap Devri</strong>
+                                        <small class="text-muted d-block">Geçmişten gelen borç/alacak kaydı. Kasayı etkilemez.</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="İşlem açıklaması..."></textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Bilgi</h3>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted"><strong>Borç:</strong> Cariye borç yazar. Satış faturası, borç tahakkuku. Kasa seçilirse <u>kasadan çıkış</u> yapılır.</p>
+                <p class="small text-muted"><strong>Alacak:</strong> Cari borcu kapatır. Tahsilat, ödeme alma. Kasa seçilirse <u>kasaya giriş</u> yapılır.</p>
+                <hr>
+                <p class="small text-muted">Dövizli işlemlerde kur bilgisini girerek TRY karşılığı otomatik hesaplanır.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        function toggleExchangeRate() {
+            var currency = $('#currencySelect').val();
+            if (currency === 'TRY') {
+                $('#exchangeRateInput').val('1').prop('readonly', true);
+            } else {
+                $('#exchangeRateInput').prop('readonly', false);
+            }
+        }
+
+        function toggleCashRegister() {
+            var type = $('[name="Type"]').val();
+            if (type === '1') { // Alacak = Tahsilat = Kasa Giriş
+                $('#cashRegisterLabel').text('Kasa (Otomatik Giriş - Tahsilat)');
+            } else { // Borç = Tediye = Kasa Çıkış
+                $('#cashRegisterLabel').text('Kasa (Otomatik Çıkış - Tediye)');
+            }
+        }
+
+        function toggleOpeningBalance() {
+            if ($('#isOpeningBalance').is(':checked')) {
+                $('#cashRegisterSelect').val('').prop('disabled', true);
+                $('#cashRegisterRow .custom-control').addClass('border-left border-warning pl-2');
+            } else {
+                $('#cashRegisterSelect').prop('disabled', false);
+                $('#cashRegisterRow .custom-control').removeClass('border-left border-warning pl-2');
+            }
+        }
+
+        $('#isOpeningBalance').on('change', toggleOpeningBalance);
+        $('#currencySelect').on('change', toggleExchangeRate);
+        $('[name="Type"]').on('change', toggleCashRegister);
+        toggleExchangeRate();
+        toggleCashRegister();
+        toggleOpeningBalance();
+
+        // Form submit: Kasa seçimi zorunlu (cari hesap devri hariç)
+        $('#txForm').on('submit', function(e) {
+            var isOpening = $('#isOpeningBalance').is(':checked');
+            var kasa = $('#cashRegisterSelect').val();
+            if (!isOpening && (!kasa || kasa === '')) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Kasa Seçmediniz!',
+                    text: 'Kasa seçmeden devam edemezsiniz. Lütfen bir kasa seçin.',
+                    confirmButtonText: 'Tamam'
+                }).then(function() {
+                    $('#cashRegisterSelect').focus();
+                });
+                return false;
+            }
+        });
+    });
+    </script>
+}

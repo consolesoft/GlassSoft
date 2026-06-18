@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "glassoft-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/GlassSoft.Web", "--urls", "http://localhost:5050"],
+      "port": 5050
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+@model GlassSoft.Application.DTOs.Accounting.ChequeNoteDto
+@{
+    ViewData["Title"] = $"Çek/Senet - {Model.DocumentNumber ?? Model.Id.ToString()}";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Çek/Senet Bilgileri -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-money-check-alt mr-2"></i>
+                    <span class="badge @Model.TypeBadgeClass mr-2">@Model.TypeDisplay</span>
+                    @(Model.DocumentNumber ?? "-")
+                </h3>
+                <div class="card-tools">
+                    <span class="badge @Model.StatusBadgeClass" style="font-size: 0.9rem;">@Model.StatusDisplay</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3"><strong>Müşteri:</strong></div>
+                    <div class="col-md-3">@Model.CustomerTitle</div>
+                    <div class="col-md-3"><strong>Belge No:</strong></div>
+                    <div class="col-md-3">@(Model.DocumentNumber ?? "-")</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Banka:</strong></div>
+                    <div class="col-md-3">@(Model.BankName ?? "-")</div>
+                    <div class="col-md-3"><strong>Şube:</strong></div>
+                    <div class="col-md-3">@(Model.BranchName ?? "-")</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Tutar:</strong></div>
+                    <div class="col-md-3"><strong class="text-primary">@Model.Amount.ToString("N2") @Model.Currency</strong></div>
+                    <div class="col-md-3"><strong>Düzenleme Tarihi:</strong></div>
+                    <div class="col-md-3">@Model.IssueDate.ToString("dd.MM.yyyy")</div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3"><strong>Vade Tarihi:</strong></div>
+                    <div class="col-md-3">
+                        @Model.DueDate.ToString("dd.MM.yyyy")
+                        @if (Model.DueDate < DateTime.Now && Model.Status == GlassSoft.Domain.Enums.ChequeNoteStatus.Portfoyde)
+                        {
+                            <span class="badge badge-danger ml-1">Vadesi Geçmiş</span>
+                        }
+                    </div>
+                    <div class="col-md-3"><strong>Kalan Gün:</strong></div>
+                    <div class="col-md-3">
+                        @{
+                            var remainingDays = (Model.DueDate - DateTime.Now).Days;
+                        }
+                        @if (remainingDays > 0)
+                        {
+                            <span class="badge badge-info">@remainingDays gün</span>
+                        }
+                        else if (remainingDays == 0)
+                        {
+                            <span class="badge badge-warning">Bugün</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-danger">@Math.Abs(remainingDays) gün geçti</span>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="row mt-2">
+                        <div class="col-md-3"><strong>Notlar:</strong></div>
+                        <div class="col-md-9">@Model.Notes</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Durum Yönetimi -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Durum Yönetimi</h3>
+            </div>
+            <div class="card-body">
+                @if (Model.Status == GlassSoft.Domain.Enums.ChequeNoteStatus.Portfoyde)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.ChequeNoteStatus.Tahsilde)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning btn-block mb-2">
+                            <i class="fas fa-university mr-1"></i> Tahsile Ver
+                        </button>
+                    </form>
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.ChequeNoteStatus.Cirolandi)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-exchange-alt mr-1"></i> Cirola
+                        </button>
+                    </form>
+                }
+                @if (Model.Status == GlassSoft.Domain.Enums.ChequeNoteStatus.Tahsilde)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.ChequeNoteStatus.TahsilEdildi)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-check-double mr-1"></i> Tahsil Et
+                        </button>
+                    </form>
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.ChequeNoteStatus.Karsiliksiz)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger btn-block mb-2 btn-delete">
+                            <i class="fas fa-ban mr-1"></i> Karşılıksız
+                        </button>
+                    </form>
+                }
+                @if (Model.Status != GlassSoft.Domain.Enums.ChequeNoteStatus.TahsilEdildi &&
+                     Model.Status != GlassSoft.Domain.Enums.ChequeNoteStatus.IadeEdildi)
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@((int)GlassSoft.Domain.Enums.ChequeNoteStatus.IadeEdildi)" />
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-secondary btn-block mb-2 btn-delete">
+                            <i class="fas fa-undo mr-1"></i> İade Et
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @if (Model.Status == GlassSoft.Domain.Enums.ChequeNoteStatus.Portfoyde)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block"><i class="fas fa-edit mr-1"></i> Düzenle</a>
+        }
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" id="chequeDeleteForm">
+            @Html.AntiForgeryToken()
+            <button type="button" class="btn btn-danger btn-block" id="btnChequeDelete"><i class="fas fa-trash mr-1"></i> Sil</button>
+        </form>
+        <a asp-action="Index" class="btn btn-secondary btn-block mt-2"><i class="fas fa-arrow-left mr-1"></i> Listeye Dön</a>
+    </div>
+</div>
+
+<script>
+$(function() {
+    $('#btnChequeDelete').on('click', function() {
+        Swal.fire({
+            title: 'Çek/Senet sil?',
+            text: 'Bu kaydı silmek istediğinize emin misiniz?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Evet, sil',
+            cancelButtonText: 'Vazgeç',
+            confirmButtonColor: '#dc3545'
+        }).then(function(r) { if (r.isConfirmed) $('#chequeDeleteForm').submit(); });
+    });
+});
+</script>

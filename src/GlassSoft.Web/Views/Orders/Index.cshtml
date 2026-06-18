@@ -1,0 +1,199 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Sales.OrderDto>
+@{
+    ViewData["Title"] = "Siparişler";
+    ViewData["Breadcrumb"] = "Satış";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-shopping-cart mr-2"></i>Siparişler</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Sipariş
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- ═══ Filtreler ═══ -->
+        <div class="card card-outline card-secondary mb-3">
+            <div class="card-header py-2">
+                <h6 class="mb-0"><i class="fas fa-filter mr-1"></i>Filtreler</h6>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-light btn-sm" id="btnClearFilters"><i class="fas fa-eraser mr-1"></i>Temizle</button>
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                </div>
+            </div>
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-2">
+                        <label class="small mb-1">Sipariş No</label>
+                        <input type="text" id="fltOrderNo" class="form-control form-control-sm" placeholder="SIP-..." />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Müşteri</label>
+                        <input type="text" id="fltCustomer" class="form-control form-control-sm" placeholder="Müşteri adı..." />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Durum</label>
+                        <select id="fltStatus" class="form-control form-control-sm no-select2">
+                            <option value="">Tüm Durumlar</option>
+                            <option value="Taslak">Taslak</option>
+                            <option value="Onaylandı">Onaylandı</option>
+                            <option value="Üretimde">Üretimde</option>
+                            <option value="Tamamlandı">Tamamlandı</option>
+                            <option value="İptal Edildi">İptal Edildi</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Sipariş Tarihi (Min)</label>
+                        <input type="date" id="fltOrderDateMin" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Sipariş Tarihi (Max)</label>
+                        <input type="date" id="fltOrderDateMax" class="form-control form-control-sm" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-2">
+                        <label class="small mb-1">Termin (Min)</label>
+                        <input type="date" id="fltDeliveryDateMin" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Termin (Max)</label>
+                        <input type="date" id="fltDeliveryDateMax" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Teslim (Min)</label>
+                        <input type="date" id="fltCompletedDateMin" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small mb-1">Teslim (Max)</label>
+                        <input type="date" id="fltCompletedDateMax" class="form-control form-control-sm" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table id="tblOrders" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Sipariş No</th>
+                    <th>Müşteri</th>
+                    <th>Tarih</th>
+                    <th>Termin</th>
+                    <th>Teslim</th>
+                    <th class="text-center">Kalem</th>
+                    <th class="text-center">Toplam Adet</th>
+                    <th class="text-center">Teslim</th>
+                    <th class="text-center">Kalan</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                    <th style="width: 80px">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.OrderNumber</strong></td>
+                        <td>@item.CustomerTitle</td>
+                        <td data-order="@item.OrderDate.ToString("yyyy-MM-dd")">@item.OrderDate.ToString("dd.MM.yyyy")</td>
+                        <td data-order="@(item.DeliveryDate?.ToString("yyyy-MM-dd") ?? "")">@(item.DeliveryDate?.ToString("dd.MM.yyyy") ?? "-")</td>
+                        <td data-order="@(item.CompletedAt?.ToString("yyyy-MM-dd") ?? "")">@(item.CompletedAt?.ToString("dd.MM.yyyy") ?? "-")</td>
+                        <td class="text-center">@item.LineCount</td>
+                        <td class="text-center">@item.TotalQuantity</td>
+                        <td class="text-center"><span class="badge badge-success">@item.DeliveredQuantity</span></td>
+                        <td class="text-center">
+                            @if (item.RemainingQuantity > 0)
+                            {
+                                <span class="badge badge-warning">@item.RemainingQuantity</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">0</span>
+                            }
+                        </td>
+                        <td class="text-right"><strong>@item.TotalAmount.ToString("N2")</strong> @item.Currency</td>
+                        <td><span class="badge @item.StatusBadgeClass">@item.StatusDisplay</span></td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detay">
+                                <i class="fas fa-eye mr-1"></i> Detay
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        // Kolon indeksleri:
+        // 0: Sipariş No, 1: Müşteri, 2: Tarih, 3: Termin, 4: Teslim,
+        // 5: Kalem, 6: Toplam Adet, 7: Teslim, 8: Kalan, 9: Tutar, 10: Durum, 11: İşlem
+
+        // ── Tarih aralıkları için custom filter (data-order ISO formatına göre) ──
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            if (settings.nTable.id !== 'tblOrders') return true;
+            var row = settings.aoData[dataIndex].nTr;
+
+            function inRange(colIdx, minId, maxId) {
+                var min = $('#' + minId).val();
+                var max = $('#' + maxId).val();
+                if (!min && !max) return true;
+                var iso = $(row).find('td').eq(colIdx).attr('data-order') || '';
+                if (!iso) return false; // tarih boşsa min/max varsa eleme yap
+                if (min && iso < min) return false;
+                if (max && iso > max) return false;
+                return true;
+            }
+
+            if (!inRange(2, 'fltOrderDateMin', 'fltOrderDateMax')) return false;
+            if (!inRange(3, 'fltDeliveryDateMin', 'fltDeliveryDateMax')) return false;
+            if (!inRange(4, 'fltCompletedDateMin', 'fltCompletedDateMax')) return false;
+            return true;
+        });
+
+        var table = $('#tblOrders').DataTable({ order: [[2, 'desc']] });
+
+        // Sipariş No filtresi
+        $('#fltOrderNo').on('keyup change', function() {
+            table.column(0).search(this.value).draw();
+        });
+        // Müşteri filtresi
+        $('#fltCustomer').on('keyup change', function() {
+            table.column(1).search(this.value).draw();
+        });
+        // Durum filtresi (exact match için regex)
+        $('#fltStatus').on('change', function() {
+            var v = this.value;
+            if (v) {
+                table.column(10).search('^' + v + '$', true, false).draw();
+            } else {
+                table.column(10).search('').draw();
+            }
+        });
+        // Tarih filtreleri custom search'ü tetikle
+        $('#fltOrderDateMin, #fltOrderDateMax, #fltDeliveryDateMin, #fltDeliveryDateMax, #fltCompletedDateMin, #fltCompletedDateMax')
+            .on('change', function() { table.draw(); });
+
+        // Temizle
+        $('#btnClearFilters').on('click', function() {
+            $('#fltOrderNo, #fltCustomer, #fltOrderDateMin, #fltOrderDateMax, #fltDeliveryDateMin, #fltDeliveryDateMax, #fltCompletedDateMin, #fltCompletedDateMax').val('');
+            $('#fltStatus').val('');
+            table.search('').columns().search('').draw();
+        });
+    });
+    </script>
+}

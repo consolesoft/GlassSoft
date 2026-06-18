@@ -1,0 +1,603 @@
+@{
+    ViewData["Title"] = "Kullanım Kılavuzu";
+    ViewData["Breadcrumb"] = "Yardım";
+}
+
+<style>
+    .guide-hero {
+        background: linear-gradient(135deg, #1a2a3a 0%, #0d4a6b 50%, #17a2b8 100%);
+        border-radius: 12px;
+        padding: 40px;
+        margin-bottom: 30px;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .guide-hero::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 50%;
+    }
+    .guide-hero h1 { font-size: 2rem; font-weight: 700; }
+    .guide-hero p { font-size: 1.1rem; opacity: 0.9; }
+
+    .guide-section { margin-bottom: 35px; }
+    .guide-section .section-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #17a2b8;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(23,162,184,0.3);
+    }
+    .guide-section .section-title i { margin-right: 10px; }
+
+    .step-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+    .step-card:hover {
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(23,162,184,0.3);
+        transform: translateX(5px);
+    }
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    .step-card h5 { display: flex; align-items: center; margin-bottom: 10px; font-weight: 600; }
+    .step-card p { margin-left: 48px; color: #adb5bd; margin-bottom: 0; }
+
+    .tip-box {
+        background: rgba(255,193,7,0.08);
+        border-left: 4px solid #ffc107;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 16px;
+        margin: 10px 0 10px 48px;
+        font-size: 0.9rem;
+    }
+    .tip-box i { color: #ffc107; margin-right: 6px; }
+
+    .warning-box {
+        background: rgba(220,53,69,0.08);
+        border-left: 4px solid #dc3545;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 16px;
+        margin: 10px 0 10px 48px;
+        font-size: 0.9rem;
+    }
+    .warning-box i { color: #dc3545; margin-right: 6px; }
+
+    .info-box-guide {
+        background: rgba(23,162,184,0.08);
+        border-left: 4px solid #17a2b8;
+        border-radius: 0 8px 8px 0;
+        padding: 12px 16px;
+        margin: 10px 0 10px 48px;
+        font-size: 0.9rem;
+    }
+    .info-box-guide i { color: #17a2b8; margin-right: 6px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .feature-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    .feature-card:hover { background: rgba(255,255,255,0.06); transform: translateY(-3px); }
+    .feature-card i.feature-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .feature-card h5 { font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { color: #adb5bd; font-size: 0.9rem; margin-bottom: 0; }
+
+    .flow-diagram {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 15px 0;
+    }
+    .flow-step {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    .flow-step i { margin-right: 6px; }
+    .flow-arrow { color: #6c757d; font-size: 1.2rem; }
+    .flow-draft { background: rgba(108,117,125,0.2); color: #adb5bd; }
+    .flow-approved { background: rgba(23,162,184,0.2); color: #17a2b8; }
+    .flow-production { background: rgba(255,193,7,0.2); color: #ffc107; }
+    .flow-done { background: rgba(40,167,69,0.2); color: #28a745; }
+    .flow-cancel { background: rgba(220,53,69,0.2); color: #dc3545; }
+
+    .formula-box {
+        background: rgba(108,117,125,0.15);
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-family: monospace;
+        font-size: 1rem;
+        margin: 10px 0 10px 48px;
+        display: inline-block;
+    }
+
+    .shortcut-table td, .shortcut-table th { vertical-align: middle !important; }
+    .shortcut-table .badge { font-size: 0.85rem; }
+
+    .toc-card {
+        position: sticky;
+        top: 70px;
+    }
+    .toc-card a {
+        display: block;
+        padding: 6px 12px;
+        color: #adb5bd;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    .toc-card a:hover { background: rgba(23,162,184,0.1); color: #17a2b8; }
+    .toc-card a i { width: 20px; text-align: center; margin-right: 6px; }
+</style>
+
+<!-- Hero -->
+<div class="guide-hero">
+    <h1><i class="fas fa-book-open mr-2"></i>GLASSOFT Kullanım Kılavuzu</h1>
+    <p>Siparişten kesim optimizasyonuna, stoktan muhasebeye - tüm iş süreçlerinizi adım adım öğrenin.</p>
+    <small class="text-white-50">Sürüm 1.0.0 | ConsoleSoft</small>
+</div>
+
+<div class="row">
+    <!-- Sol: İçerik -->
+    <div class="col-lg-9">
+
+        <!-- ==================== MODÜL ÖZETİ ==================== -->
+        <div class="guide-section" id="moduller">
+            <h3 class="section-title"><i class="fas fa-th-large"></i>Sistem Modülleri</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="fas fa-shopping-cart feature-icon text-info"></i>
+                    <h5>Satış</h5>
+                    <p>Müşteri kayıtları, sipariş oluşturma, durum takibi, Excel aktarma</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-boxes feature-icon text-warning"></i>
+                    <h5>Ürün & Stok</h5>
+                    <p>Ürün grupları, ürünler, plaka tanımları, stok giriş/çıkış</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-layer-group feature-icon text-success"></i>
+                    <h5>Reçeteler</h5>
+                    <p>Cam katmanları, çıta, sarf malzeme tanımları (BOM)</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-industry feature-icon text-danger"></i>
+                    <h5>Üretim & Kesim</h5>
+                    <p>İş emri, kesim optimizasyonu, CSV/DXF çıktı, stok düşme</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-truck feature-icon text-primary"></i>
+                    <h5>Satın Alma</h5>
+                    <p>Tedarikçiler, satın alma siparişleri, mal kabul</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-calculator feature-icon" style="color: #e83e8c;"></i>
+                    <h5>Ön Muhasebe</h5>
+                    <p>Cari hesap, çek/senet takibi, döviz kurları</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ANA İŞ AKIŞI ==================== -->
+        <div class="guide-section" id="is-akisi">
+            <h3 class="section-title"><i class="fas fa-project-diagram"></i>Ana İş Akışı: Siparişten Teslimata</h3>
+            <div class="flow-diagram mb-3">
+                <span class="flow-step flow-draft"><i class="fas fa-edit"></i> Sipariş Gir</span>
+                <i class="fas fa-chevron-right flow-arrow"></i>
+                <span class="flow-step flow-approved"><i class="fas fa-check"></i> Onayla</span>
+                <i class="fas fa-chevron-right flow-arrow"></i>
+                <span class="flow-step flow-production"><i class="fas fa-industry"></i> İş Emri Oluştur</span>
+                <i class="fas fa-chevron-right flow-arrow"></i>
+                <span class="flow-step flow-production"><i class="fas fa-cut"></i> Kesim Optimize Et</span>
+                <i class="fas fa-chevron-right flow-arrow"></i>
+                <span class="flow-step flow-done"><i class="fas fa-check-double"></i> Tamamla</span>
+            </div>
+            <p class="text-muted">Aşağıda her adım detaylı anlatılmaktadır.</p>
+        </div>
+
+        <!-- ==================== MÜŞTERİ ==================== -->
+        <div class="guide-section" id="musteriler">
+            <h3 class="section-title"><i class="fas fa-users"></i>Müşteri Yönetimi</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-info">Satış</span> → <span class="badge badge-secondary">Müşteriler</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number">1</span> Yeni Müşteri Ekle</h5>
+                <p>Sağ üstteki <strong class="text-info">+ Yeni Müşteri</strong> butonuna tıklayın. Unvan (zorunlu), vergi bilgileri, telefon, e-posta, adres ve para birimi girin.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">2</span> Düzenleme & Silme</h5>
+                <p>Listede her satırın sağındaki <i class="fas fa-edit text-warning"></i> düzenle veya <i class="fas fa-trash text-danger"></i> sil butonlarını kullanın. Silme işlemi geri alınabilir (kayıt pasif yapılır).</p>
+            </div>
+        </div>
+
+        <!-- ==================== SİPARİŞ ==================== -->
+        <div class="guide-section" id="siparisler">
+            <h3 class="section-title"><i class="fas fa-file-invoice"></i>Sipariş Yönetimi</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-info">Satış</span> → <span class="badge badge-secondary">Siparişler</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number">1</span> Yeni Sipariş Oluştur</h5>
+                <p><strong class="text-info">+ Yeni Sipariş</strong> butonuna tıklayın. Müşteri seçin, tarih ve para birimi belirleyin.</p>
+            </div>
+
+            <div class="step-card">
+                <h5><span class="step-number">2</span> Kalem Ekle (Tek Tek)</h5>
+                <p><strong class="text-info">+ Kalem Ekle</strong> butonuyla satır ekleyin. Her satırda:</p>
+                <div class="ml-5 mt-2">
+                    <table class="table table-sm table-bordered" style="max-width: 600px;">
+                        <tr><td style="width:120px"><strong>Ürün/Reçete</strong></td><td>Açılır listeden ürün veya reçete seçin</td></tr>
+                        <tr><td><strong>En (mm)</strong></td><td>Cam genişliği - milimetre cinsinden</td></tr>
+                        <tr><td><strong>Boy (mm)</strong></td><td>Cam yüksekliği - milimetre cinsinden</td></tr>
+                        <tr><td><strong>Adet</strong></td><td>Kaç parça kesilecek</td></tr>
+                        <tr><td><strong>Birim Fiyat</strong></td><td>m² başına fiyat</td></tr>
+                    </table>
+                </div>
+                <div class="formula-box">
+                    <i class="fas fa-calculator text-info mr-1"></i> <strong>Tutar</strong> = Birim Fiyat &times; m² &times; Adet &nbsp;&nbsp;|&nbsp;&nbsp; <strong>m²</strong> = (En &times; Boy) / 1.000.000
+                </div>
+            </div>
+
+            <div class="step-card">
+                <h5><span class="step-number">3</span> Excel'den Toplu Kalem Aktar (Opsiyonel)</h5>
+                <p>Çok sayıda kalem girmeniz gerekiyorsa Excel kullanın:</p>
+                <div class="ml-5 mt-2">
+                    <p><i class="fas fa-file-excel text-success mr-1"></i> <strong>Şablon</strong> butonuna tıklayıp Excel şablonunu indirin</p>
+                    <p><i class="fas fa-keyboard text-warning mr-1"></i> Şablonu doldurun: Ürün/Reçete kodu, En, Boy, Adet, Birim Fiyat</p>
+                    <p><i class="fas fa-upload text-info mr-1"></i> <strong>Excel Aktar</strong> butonuna tıklayıp dosyayı yükleyin</p>
+                    <p><i class="fas fa-check-circle text-success mr-1"></i> Eşleşme sonuçlarını kontrol edip <strong>Aktar</strong>'a basın</p>
+                </div>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> Eşleşmeyen kalemler sarı uyarı ile gösterilir. Kodu düzeltip tekrar yükleyebilirsiniz.
+                </div>
+            </div>
+
+            <div class="step-card">
+                <h5><span class="step-number">4</span> Kaydet</h5>
+                <p><strong class="text-primary">Kaydet</strong> butonuna basın. Sipariş <span class="badge badge-secondary">Taslak</span> durumunda oluşur.</p>
+            </div>
+
+            <div class="step-card">
+                <h5><span class="step-number">5</span> Sipariş Durumunu Değiştir</h5>
+                <p>Sipariş detay sayfasındaki butonlarla durumu ilerletin:</p>
+                <div class="flow-diagram mt-2">
+                    <span class="flow-step flow-draft"><i class="fas fa-edit"></i> Taslak</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-approved"><i class="fas fa-check"></i> Onaylandı</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-production"><i class="fas fa-cog"></i> Üretimde</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-done"><i class="fas fa-check-double"></i> Tamamlandı</span>
+                </div>
+                <div class="flow-diagram">
+                    <span style="margin-left: 48px;" class="flow-step flow-cancel"><i class="fas fa-ban"></i> İptal</span>
+                    <span class="text-muted ml-2" style="font-size:0.8rem">(her aşamadan iptal edilebilir)</span>
+                </div>
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i> Durum değişiklikleri geri alınamaz! Sipariş onaylandıktan sonra tekrar taslağa dönemez.
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ÜRÜN & STOK ==================== -->
+        <div class="guide-section" id="urun-stok">
+            <h3 class="section-title"><i class="fas fa-boxes"></i>Ürün & Stok Yönetimi</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-warning text-dark">Ürün & Stok</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-folder"></i></span> Ürün Grupları</h5>
+                <p>Ürünleri kategorilere ayırın: Düz Cam, Isıcam, Çıta, Sarf Malzeme vb.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-cube"></i></span> Ürünler</h5>
+                <p>Her ürün için ad, kod, kalınlık (mm), birim (m², adet, metre, kg) ve birim fiyat tanımlayın. <strong>"Plaka Ürünü"</strong> işaretli olanlar kesim optimizasyonunda kullanılır.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-chess-board"></i></span> Plaka Tanımları</h5>
+                <p>Standart plaka boyutlarını girin (örn: 3210×2250 mm). Kesim optimizasyonu bu boyutları kullanarak cam parçalarını yerleştirir.</p>
+                <div class="info-box-guide">
+                    <i class="fas fa-info-circle"></i> Yaygın boyutlar: <strong>3210×2250</strong> (Standart), <strong>3210×6000</strong> (Jumbo), <strong>2550×1605</strong> (Küçük)
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-warehouse"></i></span> Stok Durumu</h5>
+                <p>Ürün bazlı anlık stok miktarını görün. <strong>Hareketler</strong> butonu ile giriş/çıkış geçmişini inceleyin. <strong>Stok Girişi</strong> ile manuel giriş yapın.</p>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> İş emri tamamlandığında stok çıkışı <strong>otomatik</strong> yapılır. Manuel giriş genelde mal kabul için kullanılır.
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== REÇETE ==================== -->
+        <div class="guide-section" id="receteler">
+            <h3 class="section-title"><i class="fas fa-layer-group"></i>Reçete (BOM) Yönetimi</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-success">Reçeteler</span> → <span class="badge badge-secondary">Reçete Listesi</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Reçete Nedir?</h5>
+                <p>Bir ürünün hangi malzemelerden oluştuğunu tarif eder. Örnek: <strong>4+12+4 Isıcam</strong></p>
+                <div class="ml-5 mt-3">
+                    <div style="display:flex; align-items:center; gap:4px; max-width: 350px;">
+                        <div style="flex:1; background:linear-gradient(135deg,#17a2b8,#138496); text-align:center; padding:12px 0; border-radius:6px; color:#fff; font-weight:600;">
+                            4mm Cam
+                        </div>
+                        <div style="flex:1; background:linear-gradient(135deg,#6c757d,#5a6268); text-align:center; padding:12px 0; border-radius:6px; color:#fff; font-weight:600;">
+                            12mm Çıta
+                        </div>
+                        <div style="flex:1; background:linear-gradient(135deg,#17a2b8,#138496); text-align:center; padding:12px 0; border-radius:6px; color:#fff; font-weight:600;">
+                            4mm Cam
+                        </div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">↑ 3 katmanlı ısıcam yapısı</small>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <h5><span class="step-number">1</span> Yeni Reçete</h5>
+                <p><strong>Kod</strong> (kısa: "4124"), <strong>Ad</strong> ("4+12+4 Isıcam") ve açıklama girin.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">2</span> Katman Ekle</h5>
+                <p>Her katman için tip (Cam / Ara Parça) ve ilgili ürünü seçin. Katmanlar sırayla dizilir.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">3</span> Sarf Malzeme Ekle</h5>
+                <p>Butyl, polisülfür, moleküler elek gibi sarf malzemeleri ve miktarlarını girin (isteğe bağlı).</p>
+            </div>
+            <div class="info-box-guide" style="margin-left: 0;">
+                <i class="fas fa-info-circle"></i> Sipariş kaleminde reçete seçildiğinde, iş emri oluşturulurken sistem <strong>otomatik olarak katmanlara ayırır</strong> (reçete patlatma). Her cam tipi ayrı ayrı optimize edilir.
+            </div>
+        </div>
+
+        <!-- ==================== ÜRETİM & KESİM ==================== -->
+        <div class="guide-section" id="uretim">
+            <h3 class="section-title"><i class="fas fa-industry"></i>Üretim & Kesim Optimizasyonu</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-danger">Üretim & Kesim</span> → <span class="badge badge-secondary">İş Emirleri</span>
+            </p>
+            <p class="text-muted">Bu modül GLASSOFT'un en önemli özelliğidir. Cam parçalarını plakalara en verimli şekilde yerleştirip fire oranını minimuma indirir.</p>
+
+            <div class="step-card">
+                <h5><span class="step-number">1</span> İş Emri Oluştur</h5>
+                <p><strong class="text-info">+ Yeni İş Emri</strong> butonuna tıklayın. Onaylı siparişlerdeki <strong>henüz optimize edilmemiş</strong> kalemler listelenir.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">2</span> Kalemleri Seç</h5>
+                <p>Checkbox ile istediğiniz kalemleri seçin. <strong>Farklı siparişlerden</strong> bile olsa aynı cam türüne sahip kalemleri tek iş emrinde birleştirebilirsiniz.</p>
+                <div class="tip-box">
+                    <i class="fas fa-lightbulb"></i> İlk kalemi seçtiğinizde, aynı malzemeye sahip diğer kalemler otomatik <strong>vurgulanır</strong>. Farklı malzeme olanlar soluklaşır.
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">3</span> Kesim Optimizasyonu Çalıştır</h5>
+                <p>İş emri detay sayfasında <strong class="text-success">Kesim Optimizasyonu Çalıştır</strong> butonuna basın. Sistem:</p>
+                <div class="ml-5 mt-2">
+                    <p><i class="fas fa-cogs text-warning mr-2"></i> Parçaları büyükten küçüğe sıralar</p>
+                    <p><i class="fas fa-th text-info mr-2"></i> Her parçayı en uygun plaka alanına yerleştirir</p>
+                    <p><i class="fas fa-sync text-success mr-2"></i> Gerekirse parçayı 90° döndürür</p>
+                    <p><i class="fas fa-plus-circle text-primary mr-2"></i> Plaka dolunca yeni plaka açar</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">4</span> Kesim Planını İncele</h5>
+                <p>Her plaka için <strong>renkli görsel yerleşim</strong> ve <strong>fire oranı (%)</strong> gösterilir. Her parçanın üzerinde sipariş no ve ölçüler yazar.</p>
+                <div class="ml-5 mt-3 mb-2">
+                    <!-- Mini SVG kesim planı örneği -->
+                    <svg viewBox="0 0 300 200" style="max-width:400px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                        <rect x="5" y="5" width="290" height="190" fill="none" stroke="#6c757d" stroke-width="1" stroke-dasharray="4"/>
+                        <rect x="8" y="8" width="140" height="90" fill="rgba(23,162,184,0.3)" stroke="#17a2b8" stroke-width="1" rx="2"/>
+                        <text x="78" y="50" fill="#17a2b8" font-size="10" text-anchor="middle">1000×600</text>
+                        <text x="78" y="65" fill="#adb5bd" font-size="8" text-anchor="middle">SIP-001</text>
+                        <rect x="152" y="8" width="90" height="90" fill="rgba(40,167,69,0.3)" stroke="#28a745" stroke-width="1" rx="2"/>
+                        <text x="197" y="50" fill="#28a745" font-size="10" text-anchor="middle">600×600</text>
+                        <text x="197" y="65" fill="#adb5bd" font-size="8" text-anchor="middle">SIP-002</text>
+                        <rect x="246" y="8" width="46" height="90" fill="rgba(255,193,7,0.3)" stroke="#ffc107" stroke-width="1" rx="2"/>
+                        <text x="269" y="50" fill="#ffc107" font-size="9" text-anchor="middle">300</text>
+                        <text x="269" y="65" fill="#ffc107" font-size="9" text-anchor="middle">×600</text>
+                        <rect x="8" y="102" width="140" height="85" fill="rgba(220,53,69,0.15)" stroke="rgba(220,53,69,0.3)" stroke-width="1" stroke-dasharray="3" rx="2"/>
+                        <text x="78" y="150" fill="rgba(220,53,69,0.5)" font-size="10" text-anchor="middle">FIRE</text>
+                        <rect x="152" y="102" width="140" height="50" fill="rgba(108,117,125,0.3)" stroke="#6c757d" stroke-width="1" rx="2"/>
+                        <text x="222" y="130" fill="#adb5bd" font-size="10" text-anchor="middle">800×350</text>
+                        <text x="222" y="145" fill="#adb5bd" font-size="8" text-anchor="middle">SIP-003</text>
+                    </svg>
+                    <small class="text-muted d-block mt-1">↑ Örnek kesim planı görünümü (renkli parçalar + fire alanı)</small>
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">5</span> Çıktı İndir</h5>
+                <p>Kesim planını makinaya göndermek için:</p>
+                <div class="ml-5 mt-2">
+                    <p><i class="fas fa-file-csv text-success mr-2"></i> <strong>CSV İndir</strong> — Makine tarafından okunabilir koordinat listesi</p>
+                    <p><i class="fas fa-drafting-compass text-info mr-2"></i> <strong>DXF İndir</strong> — AutoCAD / CNC kesim makinası uyumlu çizim</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">6</span> Tamamla & Stok Düş</h5>
+                <p><strong class="text-success">Tamamla & Stok Düş</strong> butonuna basın. Kullanılan malzemeler stoktan <strong>otomatik düşürülür</strong>.</p>
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i> Bu işlem <strong>geri alınamaz!</strong> Stok çıkışları otomatik oluşturulur.
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SATIN ALMA ==================== -->
+        <div class="guide-section" id="satin-alma">
+            <h3 class="section-title"><i class="fas fa-truck"></i>Satın Alma</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-primary">Satın Alma</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-address-book"></i></span> Tedarikçiler</h5>
+                <p>Cam tedarikçilerinizin bilgilerini kaydedin (unvan, vergi, iletişim, adres). Müşteri formuyla aynı yapıdadır.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-file-alt"></i></span> Satın Alma Siparişleri</h5>
+                <p>Tedarikçiye sipariş oluşturun: ürün, miktar, birim fiyat. Durumlar:</p>
+                <div class="flow-diagram mt-2">
+                    <span class="flow-step flow-draft"><i class="fas fa-edit"></i> Taslak</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-approved"><i class="fas fa-check"></i> Onaylandı</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-production"><i class="fas fa-truck-loading"></i> Kısmi Teslim</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-done"><i class="fas fa-check-double"></i> Tamamlandı</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ÖN MUHASEBE ==================== -->
+        <div class="guide-section" id="muhasebe">
+            <h3 class="section-title"><i class="fas fa-calculator"></i>Ön Muhasebe</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge" style="background:#e83e8c; color:#fff;">Ön Muhasebe</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-exchange-alt"></i></span> Cari Hareketler</h5>
+                <p>Müşterilerle borç/alacak takibi yapın. <strong>Borç:</strong> Müşterinin size olan borcu (sipariş onayında otomatik oluşur). <strong>Alacak:</strong> Tahsil ettiğiniz tutar.</p>
+                <div class="ml-5 mt-2">
+                    <table class="table table-sm table-bordered" style="max-width: 500px;">
+                        <tr><td style="width:120px"><strong>Ödeme Tipleri</strong></td><td>Nakit, Havale, Çek, Senet, Kredi Kartı</td></tr>
+                        <tr><td><strong>Para Birimleri</strong></td><td>TRY, USD, EUR</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-money-check-alt"></i></span> Çek / Senet Takibi</h5>
+                <p>Müşterilerden aldığınız çek ve senetleri kaydedin. Vade tarihi, banka, tutar bilgilerini girin.</p>
+                <div class="flow-diagram mt-2 mb-2">
+                    <span class="flow-step flow-draft"><i class="fas fa-wallet"></i> Portföyde</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-approved"><i class="fas fa-university"></i> Tahsilde</span>
+                    <i class="fas fa-arrow-right flow-arrow"></i>
+                    <span class="flow-step flow-done"><i class="fas fa-check-circle"></i> Tahsil Edildi</span>
+                </div>
+                <div class="ml-5">
+                    <small class="text-muted">Diğer durumlar: <span class="badge badge-danger">Karşılıksız</span> <span class="badge badge-secondary">İade</span> <span class="badge badge-warning text-dark">Ciro</span></small>
+                </div>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-coins"></i></span> Döviz Kurları</h5>
+                <p>Günlük döviz kurlarını kaydedin. Çoklu para birimi desteği (TRY, USD, EUR) tüm modüllerde aktiftir.</p>
+            </div>
+        </div>
+
+        <!-- ==================== YÖNETİM ==================== -->
+        <div class="guide-section" id="yonetim">
+            <h3 class="section-title"><i class="fas fa-cogs"></i>Yönetim</h3>
+            <p>
+                <strong>Menü:</strong> <span class="badge badge-dark">Yönetim</span>
+            </p>
+
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-user-plus"></i></span> Kullanıcılar</h5>
+                <p>Yeni kullanıcı ekleyin: ad, soyad, e-posta, şifre ve rol atayın. Kullanıcıları <strong>pasif</strong> yaparak erişimini kapatabilirsiniz (kayıtları silinmez).</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number"><i class="fas fa-user-shield"></i></span> Roller</h5>
+                <p>Hazır roller: <span class="badge badge-info">Admin</span> <span class="badge badge-success">Satış</span> <span class="badge badge-warning text-dark">Üretim</span> <span class="badge badge-secondary">Muhasebe</span> <span class="badge badge-primary">Depo</span></p>
+                <p>Yeni roller oluşturabilir veya mevcut rolleri düzenleyebilirsiniz.</p>
+            </div>
+        </div>
+
+        <!-- ==================== SSS ==================== -->
+        <div class="guide-section" id="sss">
+            <h3 class="section-title"><i class="fas fa-question-circle"></i>Sık Sorulan Sorular</h3>
+
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Sipariş numaraları nasıl oluşuyor?</h5>
+                <p>Otomatik olarak <code>SIP-yyyyAA-001</code> formatında. Örnek: <code>SIP-202603-001</code>. Her ay sıfırdan başlar.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Silinen kayıtlar geri gelir mi?</h5>
+                <p>Evet. Tüm silmeler <strong>soft delete</strong> olarak çalışır. Kayıt veritabanından silinmez, pasif yapılır.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Farklı siparişleri birleştirebilir miyim?</h5>
+                <p>Evet! İş emri oluştururken farklı siparişlerden kalemleri seçebilirsiniz. Aynı cam türünü otomatik filtreler.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Kesim optimizasyonu ne kadar verimli?</h5>
+                <p>Guillotine algoritması genellikle <strong>%5-15</strong> arası fire oranı sağlar. Her planın fire oranı gösterilir.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">?</span> CSV ve DXF farkı nedir?</h5>
+                <p><strong>CSV:</strong> Koordinat listesi, genel amaçlı. <strong>DXF:</strong> AutoCAD/CNC uyumlu çizim formatı, profesyonel makinalar için.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Stok düşme geri alınabilir mi?</h5>
+                <p>Hayır. İş emri tamamlama geri alınamaz. Hata durumunda <strong>manuel stok girişi</strong> yaparak düzeltebilirsiniz.</p>
+            </div>
+            <div class="step-card">
+                <h5><span class="step-number">?</span> Birden fazla kullanıcı aynı anda çalışabilir mi?</h5>
+                <p>Evet. Web tabanlı yapı sayesinde farklı kullanıcılar farklı modüllerde eş zamanlı çalışabilir.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sağ: İçindekiler (Sticky) -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <div class="card toc-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-list mr-2"></i>İçindekiler</h3>
+            </div>
+            <div class="card-body p-2">
+                <a href="#moduller"><i class="fas fa-th-large"></i> Modüller</a>
+                <a href="#is-akisi"><i class="fas fa-project-diagram"></i> Ana İş Akışı</a>
+                <a href="#musteriler"><i class="fas fa-users"></i> Müşteriler</a>
+                <a href="#siparisler"><i class="fas fa-file-invoice"></i> Siparişler</a>
+                <a href="#urun-stok"><i class="fas fa-boxes"></i> Ürün & Stok</a>
+                <a href="#receteler"><i class="fas fa-layer-group"></i> Reçeteler</a>
+                <a href="#uretim"><i class="fas fa-industry"></i> Üretim & Kesim</a>
+                <a href="#satin-alma"><i class="fas fa-truck"></i> Satın Alma</a>
+                <a href="#muhasebe"><i class="fas fa-calculator"></i> Ön Muhasebe</a>
+                <a href="#yonetim"><i class="fas fa-cogs"></i> Yönetim</a>
+                <a href="#sss"><i class="fas fa-question-circle"></i> SSS</a>
+            </div>
+        </div>
+    </div>
+</div>

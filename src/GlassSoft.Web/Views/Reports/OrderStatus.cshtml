@@ -1,0 +1,123 @@
+@model List<GlassSoft.Application.DTOs.Sales.OrderDto>
+@{
+    ViewData["Title"] = "Sipariş Durum Raporu";
+    ViewData["Breadcrumb"] = "Raporlar";
+    var start = (DateTime)ViewBag.StartDate;
+    var end = (DateTime)ViewBag.EndDate;
+}
+
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-clipboard-list mr-2"></i>Sipariş Durum Raporu</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="form-inline mb-3">
+            <label class="mr-2">Tarih Türü:</label>
+            @Html.DropDownList("dateField", (SelectList)ViewBag.DateFieldList, new { @class = "form-control no-select2 mr-2" })
+            <label class="mr-2">Başlangıç:</label>
+            <input type="date" name="startDate" value="@start.ToString("yyyy-MM-dd")" class="form-control mr-2" />
+            <label class="mr-2">Bitiş:</label>
+            <input type="date" name="endDate" value="@end.ToString("yyyy-MM-dd")" class="form-control mr-2" />
+            <label class="mr-2">Durum:</label>
+            @Html.DropDownList("status", (SelectList)ViewBag.StatusList, new { @class = "form-control no-select2 mr-2" })
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search mr-1"></i> Filtrele</button>
+        </form>
+
+        <div class="row">
+            <div class="col">
+                <div class="info-box bg-secondary">
+                    <span class="info-box-icon"><i class="fas fa-file-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Taslak</span>
+                        <span class="info-box-number">@ViewBag.TaslakCount</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="info-box bg-info">
+                    <span class="info-box-icon"><i class="fas fa-check"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Onaylanan</span>
+                        <span class="info-box-number">@ViewBag.OnaylandiCount</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="info-box bg-warning">
+                    <span class="info-box-icon"><i class="fas fa-industry"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Üretimde</span>
+                        <span class="info-box-number">@ViewBag.UretimdeCount</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="info-box bg-success">
+                    <span class="info-box-icon"><i class="fas fa-check-double"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Tamamlanan</span>
+                        <span class="info-box-number">@ViewBag.TamamlandiCount</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="info-box bg-danger">
+                    <span class="info-box-icon"><i class="fas fa-times"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">İptal</span>
+                        <span class="info-box-number">@ViewBag.IptalCount</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table id="tbl" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Sipariş No</th>
+                    <th>Tarih</th>
+                    <th>Müşteri</th>
+                    <th>Durum</th>
+                    <th>Teslim Tarihi</th>
+                    <th class="text-right">Kalem</th>
+                    <th class="text-right">Toplam m²</th>
+                    <th class="text-right">G.Toplam</th>
+                    <th style="width:40px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr>
+                        <td><strong>@o.OrderNumber</strong></td>
+                        <td data-order="@o.OrderDate.ToString("yyyy-MM-dd")">@o.OrderDate.ToString("dd.MM.yyyy")</td>
+                        <td>@o.CustomerTitle</td>
+                        <td><span class="badge @o.StatusBadgeClass">@o.StatusDisplay</span></td>
+                        <td data-order="@(o.CompletedAt?.ToString("yyyy-MM-dd") ?? "")">@(o.CompletedAt?.ToString("dd.MM.yyyy") ?? "-")</td>
+                        <td class="text-right">@o.LineCount</td>
+                        <td class="text-right">@o.TotalAreaM2.ToString("N2")</td>
+                        <td class="text-right"><strong>@o.GrandTotal.ToString("N2")</strong></td>
+                        <td>
+                            <a asp-controller="Orders" asp-action="Details" asp-route-id="@o.Id" class="btn btn-info btn-xs" title="Detay">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" class="text-right"><strong>Toplam (@Model.Count sipariş):</strong></td>
+                    <td class="text-right"><strong>@Model.Sum(o => o.LineCount)</strong></td>
+                    <td class="text-right"><strong>@Model.Sum(o => o.TotalAreaM2).ToString("N2")</strong></td>
+                    <td class="text-right"><strong>@Model.Sum(o => o.GrandTotal).ToString("N2")</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tbl').DataTable({ "order": [[1, "desc"]], "pageLength": 50 }); });</script>
+}

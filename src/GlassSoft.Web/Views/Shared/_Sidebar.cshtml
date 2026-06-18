@@ -1,0 +1,303 @@
+@using Microsoft.AspNetCore.Identity
+@using GlassSoft.Domain.Entities.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="~/" class="brand-link">
+        <i class="fas fa-gem brand-image img-circle elevation-3 ml-3 mt-1" style="font-size: 1.5rem; color: #17a2b8;"></i>
+        <span class="brand-text font-weight-light"><strong>GLASS</strong>SOFT</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <!-- Sidebar user panel -->
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image">
+                    <i class="fas fa-user-circle fa-2x text-light"></i>
+                </div>
+                <div class="info">
+                    <a href="#" class="d-block">@UserManager.GetUserName(User)</a>
+                </div>
+            </div>
+        }
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu" data-accordion="false">
+
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a asp-controller="Home" asp-action="Index" class="nav-link">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+
+                <!-- Cari Yönetimi -->
+                <li class="nav-item">
+                    <a asp-controller="Customers" asp-action="Index" class="nav-link">
+                        <i class="nav-icon fas fa-address-book"></i>
+                        <p>Cari Yönetimi</p>
+                    </a>
+                </li>
+
+                <!-- Satış -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-shopping-cart"></i>
+                        <p>
+                            Satış
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Orders" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Siparişler</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Deliveries" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Teslimat Belgeleri</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="OrderFeatures" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Kalem Özellikleri</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Ürün & Stok -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-boxes"></i>
+                        <p>
+                            Ürün & Stok
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="ProductGroups" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Ürün Grupları</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Products" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Ürünler</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="GlassPlates" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Plaka Tanımları</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Stock" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Stok Durumu</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Reçete (BOM) -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-layer-group"></i>
+                        <p>
+                            Reçeteler
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Recipes" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Reçete Listesi</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Üretim & Kesim -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-industry"></i>
+                        <p>
+                            Üretim & Kesim
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="WorkOrders" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>İş Emirleri</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Satın Alma -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-truck"></i>
+                        <p>
+                            Satın Alma
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="PurchaseOrders" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Satın Alma Siparişleri</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Ön Muhasebe -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-calculator"></i>
+                        <p>
+                            Ön Muhasebe
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Transactions" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Cari Hareketler</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="ChequeNotes" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Çek/Senet Takibi</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="CurrencyRates" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Döviz Kurları</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Expenses" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Giderler</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="CashRegisters" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Kasa Takibi</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Transactions" asp-action="BalanceList" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Cari Bakiye Listesi</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Yönetim -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-cogs"></i>
+                        <p>
+                            Yönetim
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Users" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Kullanıcılar</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Roles" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Roller & Yetkiler</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="PrintTemplates" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Yazdır Şablonları</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Settings" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Sistem Ayarları</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Raporlar -->
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-chart-bar"></i>
+                        <p>
+                            Raporlar
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Reports" asp-action="ProductSales" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Ürün Satış Raporu</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Reports" asp-action="OrderStatus" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Sipariş Durum Raporu</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Reports" asp-action="StockMovements" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Stok Hareket Raporu</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Kılavuz -->
+                <li class="nav-header mt-2" style="color: #6c757d; font-size: 0.7rem;">YARDIM</li>
+                <li class="nav-item">
+                    <a asp-controller="Guide" asp-action="Index" class="nav-link">
+                        <i class="nav-icon fas fa-book"></i>
+                        <p>Kullanım Kılavuzu</p>
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+    </div>
+</aside>

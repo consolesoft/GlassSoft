@@ -1,0 +1,98 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Sales.CustomerDto>
+@{
+    ViewData["Title"] = "Cari Yönetimi";
+    ViewData["Breadcrumb"] = "Satış";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+@if (TempData["Error"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@Html.Raw(Html.Encode(TempData["Error"]).Replace("'", "\\'"))', 'Hata', { timeOut: 8000 }); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-address-book mr-2"></i>Cari Yönetimi</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Cari
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblCustomers" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Unvan</th>
+                    <th>Tür</th>
+                    <th>Şehir</th>
+                    <th>Telefon</th>
+                    <th>Para Birimi</th>
+                    <th>Bakiye (TRY)</th>
+                    <th>Durum</th>
+                    <th>Sipariş</th>
+                    <th>Durum</th>
+                    <th style="width: 80px">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.Code</strong></td>
+                        <td>@item.Title</td>
+                        <td><span class="badge @item.CustomerTypeBadgeClass">@item.CustomerTypeDisplay</span></td>
+                        <td>@(item.City ?? "-")</td>
+                        <td>@(item.Phone ?? "-")</td>
+                        <td><span class="badge badge-info">@item.Currency</span></td>
+                        @{
+                            var balances = ViewBag.Balances as Dictionary<int, decimal>;
+                            var bal = balances != null && balances.ContainsKey(item.Id) ? balances[item.Id] : 0m;
+                        }
+                        <td class="text-right">
+                            <strong class="@(bal >= 0 ? "text-danger" : "text-success")">@Math.Abs(bal).ToString("N2")</strong>
+                        </td>
+                        <td>
+                            @if (bal > 0)
+                            {
+                                <span class="badge badge-danger">Borçlu</span>
+                            }
+                            else if (bal < 0)
+                            {
+                                <span class="badge badge-success">Alacaklı</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Dengede</span>
+                            }
+                        </td>
+                        <td class="text-center">@item.OrderCount</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="badge badge-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Pasif</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Detay">
+                                <i class="fas fa-eye mr-1"></i> Detay
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function() { $('#tblCustomers').DataTable({ "order": [[0, "desc"]] }); });</script>
+}

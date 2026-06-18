@@ -1,0 +1,94 @@
+@model IEnumerable<GlassSoft.Application.DTOs.Output.PrintTemplateDto>
+@{
+    ViewData["Title"] = "Yazdır Şablonları";
+    ViewData["Breadcrumb"] = "Yönetim";
+}
+
+@if (TempData["Success"] != null)
+{
+    <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-print mr-2"></i>Yazdır Şablonları</h3>
+        <div class="card-tools">
+            <form asp-action="GenerateDefaults" method="post" style="display:inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success btn-sm mr-1" title="Eksik varsayılan şablonları oluşturur (mevcut olanlara dokunmaz)">
+                    <i class="fas fa-magic mr-1"></i> Varsayılan Şablonları Oluştur
+                </button>
+            </form>
+            <form asp-action="ResetDefaults" method="post" style="display:inline"
+                  onsubmit="return confirm('Mevcut varsayılan şablonlar (Modern/Klasik/Minimal) en güncel HTML ile üzerine yazılacak. Devam edilsin mi?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-warning btn-sm mr-1" title="Varsayılan şablonları güncel HTML ile üzerine yazar (logo dahil)">
+                    <i class="fas fa-sync-alt mr-1"></i> Sıfırla & Güncelle
+                </button>
+            </form>
+            <a asp-action="LabelDesigner" class="btn btn-danger btn-sm mr-1">
+                <i class="fas fa-tag mr-1"></i> Etiket Tasarımcısı
+            </a>
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-1"></i> Yeni Şablon
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblTemplates" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Şablon Adı</th>
+                    <th>Çıktı Türü</th>
+                    <th>Varsayılan</th>
+                    <th>Açıklama</th>
+                    <th style="width: 200px">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.Name</strong></td>
+                        <td><span class="badge @item.OutputTypeBadgeClass">@item.OutputTypeDisplay</span></td>
+                        <td class="text-center">
+                            @if (item.IsDefault)
+                            {
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Varsayılan</span>
+                            }
+                        </td>
+                        <td>@(item.Description ?? "-")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-info btn-xs" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form asp-action="Copy" asp-route-id="@item.Id" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-warning btn-xs" title="Kopyala">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </form>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-danger btn-xs btn-delete" title="Sil">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#tblTemplates').DataTable({
+                order: [[1, 'asc'], [0, 'asc']],
+                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/tr.json' }
+            });
+        });
+    </script>
+}

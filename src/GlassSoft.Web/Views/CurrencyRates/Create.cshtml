@@ -1,0 +1,55 @@
+@model GlassSoft.Application.DTOs.Accounting.CurrencyRateCreateDto
+@{
+    ViewData["Title"] = "Yeni Kur Girişi";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Kur Girişi</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CurrencyCode">Para Birimi</label>
+                                <select asp-for="CurrencyCode" class="form-control" required>
+                                    <option value="USD">USD - Amerikan Doları</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">GBP - İngiliz Sterlini</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="RateDate">Tarih</label>
+                                <input asp-for="RateDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="BuyRate">Alış Kuru</label>
+                                <input asp-for="BuyRate" type="number" step="0.0001" class="form-control" placeholder="0.0000" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="SellRate">Satış Kuru</label>
+                                <input asp-for="SellRate" type="number" step="0.0001" class="form-control" placeholder="0.0000" required />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

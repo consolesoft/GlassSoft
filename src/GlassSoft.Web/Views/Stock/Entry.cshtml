@@ -1,0 +1,113 @@
+@model GlassSoft.Application.DTOs.Product.StockEntryCreateDto
+@{
+    ViewData["Title"] = "Stok Hareketi Ekle";
+    ViewData["Breadcrumb"] = "Ürün & Stok";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Stok Hareketi Ekle</h3>
+            </div>
+            <form asp-action="Entry" method="post">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ProductItemId">Ürün</label>
+                                <select asp-for="ProductItemId" asp-items="@ViewBag.Products" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="MovementType">Hareket Tipi</label>
+                                <select asp-for="MovementType" asp-items="@ViewBag.MovementTypes" class="form-control no-select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Quantity">Miktar (m² / adet)</label>
+                                <input asp-for="Quantity" type="number" step="0.01" class="form-control" required />
+                                <small class="text-muted" id="calcInfo" style="display:none">Otomatik hesaplandı</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="PlateCount">Plaka Adedi</label>
+                                <input asp-for="PlateCount" type="number" step="1" class="form-control" value="0" />
+                                <small class="text-muted">Plaka ürünleri için doldurun</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="GlassPlateDefinitionId">Plaka Boyutu</label>
+                                <select asp-for="GlassPlateDefinitionId" asp-items="@ViewBag.PlateDefinitions" class="form-control select2">
+                                    <option value="">Opsiyonel...</option>
+                                </select>
+                                <small class="text-muted">Plaka girişi için boyut seçin</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Stok hareketi açıklaması..."></textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'default' });
+
+        var plateData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            ((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.PlateDefinitions)
+                .Select(x => new { id = x.Value, text = x.Text })
+        ));
+        var plateDims = {};
+        @{
+            var plates = ViewBag.PlateDefinitions as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+        }
+        @if (plates != null)
+        {
+            foreach (var p in plates)
+            {
+                @Html.Raw($"plateDims['{p.Value}'] = '{p.Text}';")
+            }
+        }
+
+        function calcM2() {
+            var plateId = $('#GlassPlateDefinitionId').val();
+            var count = parseInt($('#PlateCount').val()) || 0;
+            if (plateId && count > 0 && plateDims[plateId]) {
+                var dims = plateDims[plateId];
+                var match = dims.match(/([\d.,]+)x([\d.,]+)/);
+                if (match) {
+                    var w = parseFloat(match[1].replace(',', '.'));
+                    var h = parseFloat(match[2].replace(',', '.'));
+                    var m2 = (w / 1000) * (h / 1000) * count;
+                    $('#Quantity').val(m2.toFixed(4));
+                    $('#calcInfo').show().text(count + ' plaka × ' + match[1] + '×' + match[2] + ' mm = ' + m2.toFixed(4) + ' m²');
+                }
+            }
+        }
+
+        $('#GlassPlateDefinitionId').on('change', calcM2);
+        $('#PlateCount').on('input', calcM2);
+    });
+    </script>
+}

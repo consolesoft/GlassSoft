@@ -1,0 +1,104 @@
+@model GlassSoft.Application.DTOs.Accounting.ChequeNoteCreateDto
+@{
+    ViewData["Title"] = "Yeni Çek/Senet";
+    ViewData["Breadcrumb"] = "Ön Muhasebe";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Çek/Senet</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Type">Tür</label>
+                                <select asp-for="Type" class="form-control" required>
+                                    <option value="0">Çek</option>
+                                    <option value="1">Senet</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="DocumentNumber">Belge Numarası</label>
+                                <input asp-for="DocumentNumber" class="form-control" placeholder="Çek/Senet No" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="CustomerId">Müşteri</label>
+                                <select asp-for="CustomerId" asp-items="@ViewBag.Customers" class="form-control select2" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="BankName">Banka Adı</label>
+                                <input asp-for="BankName" class="form-control" placeholder="Banka adı" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="BranchName">Şube Adı</label>
+                                <input asp-for="BranchName" class="form-control" placeholder="Şube adı" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Currency">Para Birimi</label>
+                                <select asp-for="Currency" class="form-control">
+                                    <option value="TRY">TRY - Türk Lirası</option>
+                                    <option value="USD">USD - Amerikan Doları</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Amount">Tutar</label>
+                                <input asp-for="Amount" type="number" step="0.01" class="form-control" placeholder="0.00" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="IssueDate">Düzenleme Tarihi</label>
+                                <input asp-for="IssueDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="DueDate">Vade Tarihi</label>
+                                <input asp-for="DueDate" type="date" class="form-control" value="@DateTime.Now.AddMonths(1).ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Notes">Notlar</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Ek notlar..."></textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function() {
+        $('.select2').select2({ theme: 'default' });
+    });
+    </script>
+}

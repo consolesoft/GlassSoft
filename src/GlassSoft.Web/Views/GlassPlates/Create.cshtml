@@ -1,0 +1,49 @@
+@model GlassSoft.Application.DTOs.Product.GlassPlateDefinitionCreateDto
+@{
+    ViewData["Title"] = "Yeni Plaka Tanımı";
+    ViewData["Breadcrumb"] = "Ürün & Stok";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Yeni Plaka Tanımı</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label asp-for="Name">Plaka Adı</label>
+                        <input asp-for="Name" class="form-control" placeholder="Örn: 3210x2250 Standart" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="WidthMm">Genişlik (mm)</label>
+                                <input asp-for="WidthMm" type="number" step="1" class="form-control" placeholder="Örn: 3210" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="HeightMm">Yükseklik (mm)</label>
+                                <input asp-for="HeightMm" type="number" step="1" class="form-control" placeholder="Örn: 2250" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group pt-4">
+                                <div class="custom-control custom-switch">
+                                    <input asp-for="IsDefault" class="custom-control-input" id="isDefault">
+                                    <label class="custom-control-label" for="isDefault">Varsayılan Plaka</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary ml-2"><i class="fas fa-arrow-left mr-1"></i> Geri</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
