@@ -726,6 +726,7 @@
                 taxRate: parseInt($('[name="TaxRate"]').val()) || 0,
                 notes: $('[name="Notes"]').val() || null,
                 orderCustomerName: $('[name="OrderCustomerName"]').val() || null,
+                completedAt: $('[name="CompletedAt"]').val() || null,
                 lines: []
             };
             $('#linesBody tr.line-row').each(function() {

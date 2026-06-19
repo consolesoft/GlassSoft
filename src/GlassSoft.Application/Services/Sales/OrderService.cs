@@ -257,7 +257,9 @@ public class OrderService : IOrderService
         entity.CustomerId = dto.CustomerId;
         entity.OrderDate = TurkeyTime.WithCurrentTime(dto.OrderDate);
         entity.DeliveryDate = dto.DeliveryDate;
-        entity.CompletedAt = dto.CompletedAt;
+        // CompletedAt: dto null ise mevcut değeri KORU.
+        // Autosave/eksik form submit'lerinde CompletedAt boş gelirse mevcut teslim tarihi kaybolmasın.
+        if (dto.CompletedAt.HasValue) entity.CompletedAt = dto.CompletedAt;
         entity.Currency = dto.Currency;
         entity.TaxRate = dto.TaxRate;
         entity.Notes = dto.Notes;
