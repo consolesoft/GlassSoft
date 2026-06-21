@@ -1,4 +1,5 @@
 using GlassSoft.Domain.Common;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GlassSoft.Domain.Entities.Identity;
 
@@ -9,6 +10,9 @@ public class Permission : BaseEntity
     public string? Description { get; set; }
 
     public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+
+    [NotMapped]
+    public string Code => $"{Module}.{Action}";
 }
 
 public class RolePermission

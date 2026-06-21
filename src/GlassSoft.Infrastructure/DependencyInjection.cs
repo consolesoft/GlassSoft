@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using GlassSoft.Application.Licensing;
+using GlassSoft.Infrastructure.Licensing;
 
 namespace GlassSoft.Infrastructure;
 
@@ -22,6 +24,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddMemoryCache();
+        services.Configure<LicenseOptions>(configuration.GetSection(LicenseOptions.SectionName));
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
@@ -73,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<ICashTransactionService, CashTransactionService>();
         services.AddScoped<ISystemSettingService, SystemSettingService>();
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<ILicenseService, FileLicenseService>();
 
         return services;
     }

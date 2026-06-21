@@ -254,6 +254,15 @@
                                 <p>Sistem Ayarları</p>
                             </a>
                         </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a asp-controller="License" asp-action="Index" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Lisans Yönetimi</p>
+                                </a>
+                            </li>
+                        }
                     </ul>
                 </li>
 

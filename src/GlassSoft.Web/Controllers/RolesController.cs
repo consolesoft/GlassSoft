@@ -1,5 +1,6 @@
 using GlassSoft.Domain.Entities.Identity;
 using GlassSoft.Web.Models.Role;
+using GlassSoft.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +13,16 @@ public class RolesController : Controller
 {
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ApplicationDbContext _context;
 
     public RolesController(
         RoleManager<ApplicationRole> roleManager,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        ApplicationDbContext context)
     {
         _roleManager = roleManager;
         _userManager = userManager;
+        _context = context;
     }
 
     public async Task<IActionResult> Index()
@@ -91,8 +95,14 @@ public class RolesController : Controller
         {
             Id = role.Id,
             Name = role.Name ?? string.Empty,
-            Description = role.Description
+            Description = role.Description,
+            SelectedPermissionIds = await _context.RolePermissions
+                .Where(rp => rp.RoleId == role.Id)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync()
         };
+
+        await LoadPermissionsAsync(model);
 
         return View(model);
     }
@@ -101,7 +111,11 @@ public class RolesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(RoleEditViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            await LoadPermissionsAsync(model);
+            return View(model);
+        }
 
         var role = await _roleManager.FindByIdAsync(model.Id);
         if (role == null) return NotFound();
@@ -111,6 +125,7 @@ public class RolesController : Controller
         if (existingRole != null && existingRole.Id != model.Id)
         {
             ModelState.AddModelError("Name", "Bu rol adı zaten mevcut.");
+            await LoadPermissionsAsync(model);
             return View(model);
         }
 
@@ -125,8 +140,24 @@ public class RolesController : Controller
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
+            await LoadPermissionsAsync(model);
             return View(model);
         }
+
+        var currentPermissions = await _context.RolePermissions
+            .Where(rp => rp.RoleId == role.Id)
+            .ToListAsync();
+        _context.RolePermissions.RemoveRange(currentPermissions);
+        var validPermissionIds = await _context.Permissions
+            .Where(p => model.SelectedPermissionIds.Contains(p.Id))
+            .Select(p => p.Id)
+            .ToListAsync();
+        await _context.RolePermissions.AddRangeAsync(validPermissionIds.Select(permissionId => new RolePermission
+        {
+            RoleId = role.Id,
+            PermissionId = permissionId
+        }));
+        await _context.SaveChangesAsync();
 
         TempData["Success"] = "Rol başarıyla güncellendi.";
         return RedirectToAction(nameof(Index));
@@ -148,9 +179,31 @@ public class RolesController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        var rolePermissions = await _context.RolePermissions.Where(rp => rp.RoleId == role.Id).ToListAsync();
+        _context.RolePermissions.RemoveRange(rolePermissions);
+        await _context.SaveChangesAsync();
+
         await _roleManager.DeleteAsync(role);
 
         TempData["Success"] = "Rol başarıyla silindi.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task LoadPermissionsAsync(RoleEditViewModel model)
+    {
+        var permissions = await _context.Permissions
+            .OrderBy(p => p.Module).ThenBy(p => p.Action)
+            .ToListAsync();
+        model.PermissionGroups = permissions.GroupBy(p => p.Module)
+            .Select(g => new PermissionGroupViewModel
+            {
+                Module = g.Key,
+                Permissions = g.Select(p => new PermissionOptionViewModel
+                {
+                    Id = p.Id,
+                    Action = p.Action,
+                    Description = p.Description ?? p.Code
+                }).ToList()
+            }).ToList();
     }
 }

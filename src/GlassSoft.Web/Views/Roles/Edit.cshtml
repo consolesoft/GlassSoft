@@ -5,7 +5,7 @@
 }
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-10">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-edit mr-2"></i>Rol Düzenle</h3>
@@ -19,6 +19,32 @@
                         <input asp-for="Name" class="form-control" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
+                    <hr />
+                    <h5>Yetki Parametreleri</h5>
+                    <p class="text-muted">Bu role verilecek modül ve işlem yetkilerini seçin.</p>
+                    @foreach (var group in Model.PermissionGroups)
+                    {
+                        <div class="card card-outline card-secondary mb-3">
+                            <div class="card-header py-2"><strong>@group.Module</strong></div>
+                            <div class="card-body py-2">
+                                <div class="row">
+                                    @foreach (var permission in group.Permissions)
+                                    {
+                                        <div class="col-md-3">
+                                            <div class="custom-control custom-checkbox">
+                                                <input class="custom-control-input" type="checkbox"
+                                                       id="permission_@permission.Id" name="SelectedPermissionIds"
+                                                       value="@permission.Id"
+                                                       checked="@Model.SelectedPermissionIds.Contains(permission.Id)" />
+                                                <label class="custom-control-label" for="permission_@permission.Id"
+                                                       title="@permission.Description">@permission.Action</label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
                     <div class="form-group">
                         <label asp-for="Description"></label>
                         <textarea asp-for="Description" class="form-control" rows="3"></textarea>

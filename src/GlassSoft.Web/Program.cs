@@ -3,11 +3,14 @@ using GlassSoft.Infrastructure;
 using GlassSoft.Infrastructure.Data;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using GlassSoft.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<PermissionAuthorizationFilter>();
+builder.Services.AddControllersWithViews(options =>
+    options.Filters.AddService<PermissionAuthorizationFilter>());
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // Model binding için InvariantCulture kullan (HTML number input nokta gönderir)
@@ -44,6 +47,8 @@ app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 app.UseRouting();
 app.UseRequestLocalization();
 app.UseStaticFiles();
+
+app.UseMiddleware<LicenseMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

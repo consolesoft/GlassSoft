@@ -85,6 +85,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
             b.HasKey(rp => new { rp.RoleId, rp.PermissionId });
             b.HasOne(rp => rp.Role).WithMany().HasForeignKey(rp => rp.RoleId);
             b.HasOne(rp => rp.Permission).WithMany(p => p.RolePermissions).HasForeignKey(rp => rp.PermissionId);
+            b.HasQueryFilter(rp => !rp.Permission.IsDeleted);
+        });
+
+        builder.Entity<Permission>(b =>
+        {
+            b.HasIndex(p => new { p.Module, p.Action }).IsUnique();
+            b.Property(p => p.Module).HasMaxLength(50);
+            b.Property(p => p.Action).HasMaxLength(30);
+            b.Property(p => p.Description).HasMaxLength(200);
         });
 
         // FK cascade döngü problemlerini önlemek için Restrict kuralları

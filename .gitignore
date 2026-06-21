@@ -361,3 +361,20 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# GlassSoft - Güvenlik: Şifre içeren dosyalar
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# Runtime license installation files
+src/GlassSoft.Web/App_Data/license.json
+src/GlassSoft.Web/App_Data/installation.id
+private*.pem
+
+# GlassSoft - Büyük dosyalar: DB yedekleri
+*.bak
+wwwroot/OrnekDB.bak
+
+# ASP.NET Core user-secrets
+secrets.json

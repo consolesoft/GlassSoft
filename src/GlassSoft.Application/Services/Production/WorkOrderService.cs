@@ -287,30 +287,27 @@ public class WorkOrderService : IWorkOrderService
             .FirstOrDefaultAsync(w => w.Id == workOrderId)
             ?? throw new KeyNotFoundException($"İş emri bulunamadı: {workOrderId}");
 
-        // Eski kesim planlarını temizle (soft delete - SaveChanges'i sona bırak)
-        var now = TurkeyTime.Now;
-        foreach (var plan in workOrder.CuttingPlans.ToList())
-        {
-            foreach (var item in plan.Items.ToList())
-            {
-                item.IsDeleted = true;
-                item.DeletedAt = now;
-            }
-            plan.IsDeleted = true;
-            plan.DeletedAt = now;
-        }
+        if (workOrder.IsCompleted)
+            throw new InvalidOperationException("Tamamlanmış iş emrinde optimizasyon yeniden çalıştırılamaz.");
+
+        // Eski planlar ancak yeni planların tamamı başarıyla hesaplandıktan sonra
+        // silinecek. Böylece sığmayan parça gibi bir hata mevcut planı bozmaz.
+        var oldPlans = workOrder.CuttingPlans.ToList();
 
         // Cam malzemeleri grupla (ürün bazında)
         var glassLines = workOrder.Lines
-            .Where(l => l.MaterialType == "Glass" && l.WidthMm > 0 && l.HeightMm > 0)
+            .Where(l => l.MaterialType == "Glass" && l.WidthMm > 0 && l.HeightMm > 0 && l.Quantity > 0)
             .GroupBy(l => l.ProductItemId)
             .ToList();
 
-        var results = new List<CuttingPlanDto>();
+        var allPlates = await _plateRepository.Query()
+            .Where(p => p.WidthMm > 0 && p.HeightMm > 0)
+            .OrderByDescending(p => p.IsDefault)
+            .ThenBy(p => p.WidthMm * p.HeightMm)
+            .ToListAsync();
 
-        // Tüm plaka tanımlarını çek (plakalar artık ürün bağımsız)
-        var allPlates = await _plateRepository.Query().ToListAsync();
-        var defaultPlate = allPlates.FirstOrDefault(p => p.IsDefault) ?? allPlates.FirstOrDefault();
+        if (glassLines.Count > 0 && allPlates.Count == 0)
+            throw new InvalidOperationException("Kesim optimizasyonu için en az bir geçerli plaka tanımı gereklidir.");
 
         // Tüm planları ve item'ları bellekte oluştur, sonra TEK SEFERDE kaydet
         var allNewPlans = new List<CuttingPlan>();
@@ -319,29 +316,48 @@ public class WorkOrderService : IWorkOrderService
         {
             var productItemId = group.Key;
 
-            if (defaultPlate == null) continue;
-            var plate = defaultPlate;
-
+            // Sipariş kalemi kimliği kaybolmamalı: aynı ölçüdeki farklı siparişler
+            // ayrı parça örnekleri olarak optimizasyona girer.
             var pieces = group
-                .GroupBy(l => new { l.WidthMm, l.HeightMm })
-                .Select(g => new CutPiece
+                .SelectMany(line => Enumerable.Range(0, line.Quantity).Select(_ => new CutPiece
                 {
-                    Width = (double)g.Key.WidthMm,
-                    Height = (double)g.Key.HeightMm,
-                    Quantity = g.Sum(l => l.Quantity),
+                    Width = (double)line.WidthMm,
+                    Height = (double)line.HeightMm,
+                    Quantity = 1,
                     CanRotate = true,
-                    OrderLineId = g.First().OrderLineId
-                }).ToList();
+                    OrderLineId = line.OrderLineId
+                })).ToList();
 
             int plateIndex = 1;
             var remaining = pieces;
 
             while (remaining.Count > 0)
             {
-                var cutter = new GuillotineCutter((double)plate.WidthMm, (double)plate.HeightMm);
-                remaining = cutter.Pack(remaining);
+                // Her turda bütün plaka ölçülerini dener; en çok parçayı yerleştiren,
+                // eşitlikte daha düşük fire üreten plaka seçilir.
+                var candidates = allPlates.Select(plate =>
+                {
+                    var cutter = new GuillotineCutter((double)plate.WidthMm, (double)plate.HeightMm);
+                    var notPlaced = cutter.Pack(remaining);
+                    return new { Plate = plate, Cutter = cutter, Remaining = notPlaced };
+                }).Where(x => x.Cutter.PlacedPieces.Count > 0).ToList();
 
-                if (cutter.PlacedPieces.Count == 0) break;
+                var best = candidates
+                    .OrderByDescending(x => x.Cutter.PlacedPieces.Count)
+                    .ThenBy(x => x.Cutter.GetWastePercentage())
+                    .ThenBy(x => x.Cutter.GetPlateArea())
+                    .FirstOrDefault();
+
+                if (best == null)
+                {
+                    var sample = remaining[0];
+                    throw new InvalidOperationException(
+                        $"{sample.Width:0.##}x{sample.Height:0.##} mm parça tanımlı plakalardan hiçbirine sığmıyor.");
+                }
+
+                var plate = best.Plate;
+                var cutter = best.Cutter;
+                remaining = best.Remaining;
 
                 var usedArea = (decimal)(cutter.GetUsedArea() / 1_000_000.0);
                 var plateArea = (decimal)(cutter.GetPlateArea() / 1_000_000.0);
@@ -375,53 +391,75 @@ public class WorkOrderService : IWorkOrderService
                 line.IsOptimized = true;
         }
 
-        // TEK SaveChanges: tüm planlar + item'lar + satır güncellemeleri
+        var now = TurkeyTime.Now;
+        foreach (var plan in oldPlans)
+        {
+            foreach (var item in plan.Items)
+            {
+                item.IsDeleted = true;
+                item.DeletedAt = now;
+            }
+            plan.IsDeleted = true;
+            plan.DeletedAt = now;
+        }
+
+        var orderLineIds = glassLines.SelectMany(g => g)
+            .Where(l => l.OrderLineId.HasValue)
+            .Select(l => l.OrderLineId!.Value)
+            .Distinct()
+            .ToList();
+        var orderLines = await _orderLineRepository.Query()
+            .Where(ol => orderLineIds.Contains(ol.Id))
+            .ToListAsync();
+        foreach (var orderLine in orderLines)
+            orderLine.IsOptimized = true;
+
+        // TEK SaveChanges: eski planların soft-delete'i, yeni planlar ve satır durumları atomik kaydedilir.
         await _planRepository.AddRangeAsync(allNewPlans);
 
-        return new List<CuttingPlanDto>();
+        var refreshed = await GetByIdAsync(workOrderId);
+        return refreshed?.CuttingPlans ?? new List<CuttingPlanDto>();
     }
 
     public async Task CompleteAsync(int id)
     {
         var workOrder = await _repository.Query()
+            .Include(w => w.Lines)
             .Include(w => w.CuttingPlans)
             .Include(w => w.Order!)
             .Include(w => w.Orders).ThenInclude(wo => wo.Order)
             .FirstOrDefaultAsync(w => w.Id == id)
             ?? throw new KeyNotFoundException($"İş emri bulunamadı: {id}");
 
+        if (workOrder.IsCompleted)
+            throw new InvalidOperationException("İş emri zaten tamamlanmış.");
+        if (workOrder.Lines.Any(l => l.MaterialType == "Glass" && l.Quantity > 0) && !workOrder.CuttingPlans.Any())
+            throw new InvalidOperationException("Cam içeren iş emri, kesim optimizasyonu yapılmadan tamamlanamaz.");
+
         workOrder.IsCompleted = true;
         workOrder.CompletedAt = TurkeyTime.Now;
-        await _repository.UpdateAsync(workOrder);
 
         // Siparişleri tamamla
         if (workOrder.Order != null)
-        {
             workOrder.Order.Status = OrderStatus.Tamamlandi;
-            await _orderRepository.UpdateAsync(workOrder.Order);
-        }
         foreach (var woOrder in workOrder.Orders)
-        {
             woOrder.Order.Status = OrderStatus.Tamamlandi;
-            await _orderRepository.UpdateAsync(woOrder.Order);
-        }
 
         // Stoktan düş: kullanılan plakalar
-        foreach (var plan in workOrder.CuttingPlans)
+        var stockEntries = workOrder.CuttingPlans.Select(plan => new Domain.Entities.Product.StockEntry
         {
-            var stockEntry = new Domain.Entities.Product.StockEntry
-            {
-                ProductItemId = plan.ProductItemId,
-                MovementType = StockMovementType.Cikis,
-                Quantity = plan.UsedAreaM2 + plan.WasteAreaM2, // Toplam plaka alanı
-                PlateCount = 1,
-                GlassPlateDefinitionId = plan.GlassPlateDefinitionId,
-                ReferenceType = "WorkOrder",
-                ReferenceId = workOrder.Id,
-                Description = $"İş Emri {workOrder.WorkOrderNumber} - Plaka #{plan.PlateIndex}"
-            };
-            await _stockRepository.AddAsync(stockEntry);
-        }
+            ProductItemId = plan.ProductItemId,
+            MovementType = StockMovementType.Cikis,
+            Quantity = plan.UsedAreaM2 + plan.WasteAreaM2, // Toplam plaka alanı
+            PlateCount = 1,
+            GlassPlateDefinitionId = plan.GlassPlateDefinitionId,
+            ReferenceType = "WorkOrder",
+            ReferenceId = workOrder.Id,
+            Description = $"İş Emri {workOrder.WorkOrderNumber} - Plaka #{plan.PlateIndex}"
+        }).ToList();
+
+        // Takip edilen iş emri/sipariş değişiklikleri ve stok hareketleri tek SaveChanges ile yazılır.
+        await _stockRepository.AddRangeAsync(stockEntries);
     }
 
     public async Task DeleteAsync(int id)

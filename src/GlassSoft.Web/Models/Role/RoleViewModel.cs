@@ -34,4 +34,20 @@ public class RoleEditViewModel
     [Display(Name = "Açıklama")]
     [StringLength(200, ErrorMessage = "Açıklama en fazla 200 karakter olabilir.")]
     public string? Description { get; set; }
+
+    public List<int> SelectedPermissionIds { get; set; } = new();
+    public List<PermissionGroupViewModel> PermissionGroups { get; set; } = new();
+}
+
+public class PermissionGroupViewModel
+{
+    public string Module { get; set; } = string.Empty;
+    public List<PermissionOptionViewModel> Permissions { get; set; } = new();
+}
+
+public class PermissionOptionViewModel
+{
+    public int Id { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }

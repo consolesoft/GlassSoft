@@ -5,4 +5,10 @@
     <Project Path="src/GlassSoft.Infrastructure/GlassSoft.Infrastructure.csproj" />
     <Project Path="src/GlassSoft.Web/GlassSoft.Web.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/GlassSoft.LicenseGenerator/GlassSoft.LicenseGenerator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GlassSoft.Tests/GlassSoft.Tests.csproj" />
+  </Folder>
 </Solution>

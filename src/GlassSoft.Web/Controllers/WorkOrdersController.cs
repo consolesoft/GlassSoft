@@ -64,12 +64,23 @@ public class WorkOrdersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RunOptimization(int id)
     {
-        await _service.RunCuttingOptimizationAsync(id);
+        try
+        {
+            var plans = await _service.RunCuttingOptimizationAsync(id);
 
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            return Json(new { success = true });
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = true, planCount = plans.Count });
 
-        TempData["Success"] = "Kesim optimizasyonu tamamlandı!";
+            TempData["Success"] = $"Kesim optimizasyonu tamamlandı. {plans.Count} plaka planlandı.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return BadRequest(new { success = false, message = ex.Message });
+
+            TempData["Error"] = ex.Message;
+        }
+
         return RedirectToAction(nameof(Details), new { id });
     }
 
@@ -77,8 +88,15 @@ public class WorkOrdersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(int id)
     {
-        await _service.CompleteAsync(id);
-        TempData["Success"] = "İş emri tamamlandı, stok düşüldü.";
+        try
+        {
+            await _service.CompleteAsync(id);
+            TempData["Success"] = "İş emri tamamlandı, stok düşüldü.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
         return RedirectToAction(nameof(Details), new { id });
     }
 

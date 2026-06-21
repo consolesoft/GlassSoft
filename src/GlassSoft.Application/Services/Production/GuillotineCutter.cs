@@ -30,12 +30,16 @@ public class GuillotineCutter
     /// </summary>
     public List<CutPiece> Pack(List<CutPiece> pieces)
     {
-        // Büyükten küçüğe sırala (alan bazında), quantity'yi expand et
+        // Girdi her çağrıda normalize edilir. Yerleşemeyen parçaların Quantity değeri
+        // daima 1'dir; aksi halde sonraki plaka turunda miktar tekrar expand edilirdi.
         var sorted = new List<CutPiece>();
-        foreach (var p in pieces.OrderByDescending(p => p.Width * p.Height).ThenByDescending(p => Math.Max(p.Width, p.Height)))
+        foreach (var p in pieces
+                     .Where(p => p.Width > 0 && p.Height > 0 && p.Quantity > 0)
+                     .OrderByDescending(p => p.Width * p.Height)
+                     .ThenByDescending(p => Math.Max(p.Width, p.Height)))
         {
             for (int i = 0; i < p.Quantity; i++)
-                sorted.Add(p);
+                sorted.Add(p with { Quantity = 1 });
         }
 
         var notPlaced = new List<CutPiece>();
@@ -157,9 +161,9 @@ public class GuillotineCutter
 
     public string GenerateCsv()
     {
-        var lines = new List<string>(PlacedPieces.Count + 1) { "X,Y,Width,Height,Rotated" };
+        var lines = new List<string>(PlacedPieces.Count + 1) { "X,Y,Width,Height,Rotated,OrderLineId" };
         foreach (var p in PlacedPieces)
-            lines.Add(string.Format(IC, "{0:F1},{1:F1},{2:F1},{3:F1},{4}", p.X, p.Y, p.Width, p.Height, p.IsRotated ? 1 : 0));
+            lines.Add(string.Format(IC, "{0:F1},{1:F1},{2:F1},{3:F1},{4},{5}", p.X, p.Y, p.Width, p.Height, p.IsRotated ? 1 : 0, p.OrderLineId));
         return string.Join("\n", lines);
     }
 
@@ -186,13 +190,13 @@ public class GuillotineCutter
 
 public record FreeRect(double X, double Y, double Width, double Height);
 
-public class CutPiece
+public record CutPiece
 {
-    public double Width { get; set; }
-    public double Height { get; set; }
-    public int Quantity { get; set; } = 1;
-    public bool CanRotate { get; set; } = true;
-    public int? OrderLineId { get; set; }
+    public double Width { get; init; }
+    public double Height { get; init; }
+    public int Quantity { get; init; } = 1;
+    public bool CanRotate { get; init; } = true;
+    public int? OrderLineId { get; init; }
 }
 
 public class PlacedPiece

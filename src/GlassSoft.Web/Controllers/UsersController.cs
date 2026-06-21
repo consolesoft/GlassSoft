@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using GlassSoft.Application.Licensing;
 
 namespace GlassSoft.Web.Controllers;
 
@@ -13,13 +14,16 @@ public class UsersController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly ILicenseService _licenseService;
 
     public UsersController(
         UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager)
+        RoleManager<ApplicationRole> roleManager,
+        ILicenseService licenseService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _licenseService = licenseService;
     }
 
     public async Task<IActionResult> Index()
@@ -57,6 +61,15 @@ public class UsersController : Controller
     {
         if (!ModelState.IsValid)
         {
+            await LoadRolesAsync();
+            return View(model);
+        }
+
+        var license = await _licenseService.GetStatusAsync(HttpContext.RequestAborted);
+        var activeUserCount = await _userManager.Users.CountAsync(u => u.IsActive);
+        if (model.IsActive && license.License != null && activeUserCount >= license.License.MaxUsers)
+        {
+            ModelState.AddModelError(string.Empty, $"Lisans aktif kullanıcı limiti dolu ({activeUserCount}/{license.License.MaxUsers}).");
             await LoadRolesAsync();
             return View(model);
         }
@@ -127,6 +140,18 @@ public class UsersController : Controller
 
         var user = await _userManager.FindByIdAsync(model.Id);
         if (user == null) return NotFound();
+
+        var license = await _licenseService.GetStatusAsync(HttpContext.RequestAborted);
+        if (!user.IsActive && model.IsActive && license.License != null)
+        {
+            var activeUserCount = await _userManager.Users.CountAsync(u => u.IsActive);
+            if (activeUserCount >= license.License.MaxUsers)
+            {
+                ModelState.AddModelError(string.Empty, $"Lisans aktif kullanıcı limiti dolu ({activeUserCount}/{license.License.MaxUsers}).");
+                await LoadRolesAsync();
+                return View(model);
+            }
+        }
 
         user.FirstName = model.FirstName;
         user.LastName = model.LastName;

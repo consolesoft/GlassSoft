@@ -1,0 +1,37 @@
+@using GlassSoft.Application.Licensing
+@model LicenseStatus
+@{
+    ViewData["Title"] = "Lisans Yönetimi";
+    ViewData["Breadcrumb"] = "Yönetim";
+}
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card card-outline @(Model.IsValid ? "card-success" : "card-danger")">
+            <div class="card-header"><h3 class="card-title">Lisans Durumu</h3></div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Durum</dt><dd class="col-sm-8">@Model.Message</dd>
+                    <dt class="col-sm-4">Kurulum Kimliği</dt><dd class="col-sm-8"><code>@Model.InstallationId</code></dd>
+                    @if (Model.License != null)
+                    {
+                        <dt class="col-sm-4">Müşteri</dt><dd class="col-sm-8">@Model.License.CustomerName</dd>
+                        <dt class="col-sm-4">Bitiş</dt><dd class="col-sm-8">@Model.License.ExpiresAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+                        <dt class="col-sm-4">Kullanıcı Limiti</dt><dd class="col-sm-8">@Model.License.MaxUsers</dd>
+                        <dt class="col-sm-4">Modüller</dt><dd class="col-sm-8">@string.Join(", ", Model.License.Modules)</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Lisans Etkinleştir</h3></div>
+            <form asp-action="Activate" method="post">
+                <div class="card-body">
+                    <label for="licenseText">İmzalı lisans paketi</label>
+                    <textarea id="licenseText" name="licenseText" class="form-control" rows="8" required></textarea>
+                </div>
+                <div class="card-footer"><button class="btn btn-primary" type="submit">Doğrula ve Etkinleştir</button></div>
+            </form>
+        </div>
+    </div>
+</div>
