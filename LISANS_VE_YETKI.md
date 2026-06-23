@@ -2,31 +2,48 @@
 
 ## Lisans kurulumu
 
-Lisanslar RSA-3072/SHA-256 ile imzalanır. Private key yalnızca lisans üreticisinin güvenli ortamında tutulur; uygulamaya sadece public key verilir.
+Lisanslar RSA-3072/SHA-256 ile imzalanır. Özel anahtar yalnızca lisans üreticisinin güvenli ortamında tutulur; uygulamaya sadece açık anahtar verilir.
 
 ```bash
 dotnet run --project tools/GlassSoft.LicenseGenerator -- init private.pem public.pem
 dotnet run --project tools/GlassSoft.LicenseGenerator -- issue private.pem KURULUM_KIMLIGI "Müşteri Ünvanı" 365 20 "*" GS-2026-001 license.json
 ```
 
-`public.pem` içeriği production yapılandırmasındaki `License:PublicKeyPem` alanına konur. Kurulum kimliği Yönetim > Lisans Yönetimi ekranından alınır. Üretilen `license.json` aynı ekrandan etkinleştirilir.
+`public.pem` içeriği canlı ortam yapılandırmasındaki `License:PublicKeyPem` alanına konur. Kurulum kimliği Yönetim > Lisans Yönetimi ekranından alınır. Üretilen `license.json` aynı ekrandan etkinleştirilir.
 
-Modül listesinde `*` tüm modülleri açar. Sınırlı lisanslarda şu kodlar kullanılabilir: `Customers`, `Sales`, `Inventory`, `Production`, `Purchasing`, `Accounting`, `Reports`, `Administration`.
+Modül listesinde `*` tüm modülleri açar. Sınırlı lisanslarda şu teknik modül kodları kullanılır:
 
-`License:BypassInDevelopment` sadece ASP.NET Core ortamı gerçekten `Development` olduğunda etkilidir; production ortamında lisans zorunludur.
+- `Customers` → Müşteriler
+- `Sales` → Satış
+- `Inventory` → Stok ve Ürünler
+- `Production` → Üretim
+- `Purchasing` → Satın Alma
+- `Accounting` → Muhasebe
+- `Reports` → Raporlar
+- `Administration` → Yönetim
+
+`License:BypassInDevelopment` sadece ASP.NET Core ortamı gerçekten geliştirme ortamı olduğunda etkilidir; canlı ortamda lisans zorunludur.
 
 ## Yetki parametreleri
 
-Sunucu tarafı yetkiler `Module.Action` biçimindedir. İşlemler `Read`, `Create`, `Update`, `Delete`, `Export` olarak tanımlıdır. Roller > Düzenle ekranında parametreler rol bazında atanır. `Admin` rolü güvenli kurtarma ve ilk kurulum için tam yetkilidir.
+Sunucu tarafı yetkiler teknik olarak `Modül.İşlem` biçiminde tutulur. Ekranda işlemler Türkçe gösterilir:
 
-Yeni bir controller eklendiğinde `PermissionAuthorizationFilter.ControllerModules` eşlemesine modülü eklenmelidir. Eşlenen controller'lardaki bilinmeyen POST işlemleri varsayılan olarak `Update` kabul edilir.
+- `Read` → Görüntüleme
+- `Create` → Oluşturma
+- `Update` → Güncelleme
+- `Delete` → Silme
+- `Export` → Dışa Aktarma / Yazdırma
 
-## Production secret'ları
+Roller > Düzenle ekranında parametreler rol bazında atanır. `Admin` rolü güvenli kurtarma ve ilk kurulum için tam yetkilidir.
 
-Production ortamında repoya parola yazılmaz. Aşağıdaki değerler environment variable veya secret store üzerinden verilmelidir:
+Yeni bir denetleyici eklendiğinde `PermissionAuthorizationFilter.ControllerModules` eşlemesine modülü eklenmelidir. Eşlenen denetleyicilerdeki bilinmeyen POST işlemleri varsayılan olarak güncelleme kabul edilir.
+
+## Canlı ortam gizli değerleri
+
+Canlı ortamda repoya parola yazılmaz. Aşağıdaki değerler ortam değişkeni veya gizli değer deposu üzerinden verilmelidir:
 
 - `ConnectionStrings__DefaultConnection`
 - `BootstrapAdmin__Password` (yalnızca ilk admin henüz yoksa kullanılır)
 - `License__PublicKeyPem`
 
-Geliştirme ortamında ilk admin için geriye dönük yerel varsayılan parola kullanılabilir; production ortamında boş bootstrap parolasıyla yeni admin oluşturulmaz.
+Geliştirme ortamında ilk admin için geriye dönük yerel varsayılan parola kullanılabilir; canlı ortamda boş başlangıç parolasıyla yeni admin oluşturulmaz.

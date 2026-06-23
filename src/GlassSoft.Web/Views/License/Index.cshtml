@@ -3,6 +3,21 @@
 @{
     ViewData["Title"] = "Lisans Yönetimi";
     ViewData["Breadcrumb"] = "Yönetim";
+
+    string ModuleName(string module) => module switch
+    {
+        "*" => "Tüm modüller",
+        "Dashboard" => "Ana Sayfa",
+        "Customers" => "Müşteriler",
+        "Sales" => "Satış",
+        "Inventory" => "Stok ve Ürünler",
+        "Production" => "Üretim",
+        "Purchasing" => "Satın Alma",
+        "Accounting" => "Muhasebe",
+        "Reports" => "Raporlar",
+        "Administration" => "Yönetim",
+        _ => module
+    };
 }
 
 <div class="row">
@@ -18,7 +33,7 @@
                         <dt class="col-sm-4">Müşteri</dt><dd class="col-sm-8">@Model.License.CustomerName</dd>
                         <dt class="col-sm-4">Bitiş</dt><dd class="col-sm-8">@Model.License.ExpiresAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
                         <dt class="col-sm-4">Kullanıcı Limiti</dt><dd class="col-sm-8">@Model.License.MaxUsers</dd>
-                        <dt class="col-sm-4">Modüller</dt><dd class="col-sm-8">@string.Join(", ", Model.License.Modules)</dd>
+                        <dt class="col-sm-4">Modüller</dt><dd class="col-sm-8">@string.Join(", ", Model.License.Modules.Select(ModuleName))</dd>
                     }
                 </dl>
             </div>

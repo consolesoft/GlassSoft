@@ -41,13 +41,15 @@ public class RoleEditViewModel
 
 public class PermissionGroupViewModel
 {
-    public string Module { get; set; } = string.Empty;
+    public string ModuleCode { get; set; } = string.Empty;
+    public string ModuleName { get; set; } = string.Empty;
     public List<PermissionOptionViewModel> Permissions { get; set; } = new();
 }
 
 public class PermissionOptionViewModel
 {
     public int Id { get; set; }
-    public string Action { get; set; } = string.Empty;
+    public string ActionCode { get; set; } = string.Empty;
+    public string ActionName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 }

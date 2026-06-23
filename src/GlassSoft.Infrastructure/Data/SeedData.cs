@@ -45,7 +45,7 @@ public static class SeedData
             if (string.IsNullOrWhiteSpace(adminPassword) && environment.IsDevelopment())
                 adminPassword = "Admin123!";
             if (string.IsNullOrWhiteSpace(adminPassword))
-                throw new InvalidOperationException("İlk admin kullanıcısı için BootstrapAdmin:Password secret'ı tanımlanmalıdır.");
+                throw new InvalidOperationException("İlk admin kullanıcısı için BootstrapAdmin:Password gizli değeri tanımlanmalıdır.");
 
             adminUser = new ApplicationUser
             {
@@ -80,6 +80,26 @@ public static class SeedData
     {
         string[] modules = ["Dashboard", "Customers", "Sales", "Inventory", "Production", "Purchasing", "Accounting", "Reports", "Administration"];
         string[] actions = ["Read", "Create", "Update", "Delete", "Export"];
+        var moduleNames = new Dictionary<string, string>
+        {
+            ["Dashboard"] = "Ana Sayfa",
+            ["Customers"] = "Müşteriler",
+            ["Sales"] = "Satış",
+            ["Inventory"] = "Stok ve Ürünler",
+            ["Production"] = "Üretim",
+            ["Purchasing"] = "Satın Alma",
+            ["Accounting"] = "Muhasebe",
+            ["Reports"] = "Raporlar",
+            ["Administration"] = "Yönetim"
+        };
+        var actionNames = new Dictionary<string, string>
+        {
+            ["Read"] = "görüntüleme",
+            ["Create"] = "oluşturma",
+            ["Update"] = "güncelleme",
+            ["Delete"] = "silme",
+            ["Export"] = "dışa aktarma / yazdırma"
+        };
 
         var existing = await context.Permissions
             .Select(p => p.Module + "." + p.Action)
@@ -92,13 +112,22 @@ public static class SeedData
                          {
                              Module = module,
                              Action = action,
-                             Description = $"{module} modülü {action} yetkisi"
+                             Description = $"{moduleNames[module]} modülü {actionNames[action]} yetkisi"
                          }).ToList();
         if (additions.Count > 0)
         {
             context.Permissions.AddRange(additions);
             await context.SaveChangesAsync();
         }
+
+        var permissionDescriptions = await context.Permissions
+            .Where(p => modules.Contains(p.Module) && actions.Contains(p.Action))
+            .ToListAsync();
+        foreach (var permission in permissionDescriptions)
+        {
+            permission.Description = $"{moduleNames[permission.Module]} modülü {actionNames[permission.Action]} yetkisi";
+        }
+        await context.SaveChangesAsync();
 
         var roleModules = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {

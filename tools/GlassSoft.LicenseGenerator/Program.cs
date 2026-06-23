@@ -9,7 +9,7 @@ if (args.Length == 3 && args[0].Equals("init", StringComparison.OrdinalIgnoreCas
     using var rsa = RSA.Create(3072);
     await File.WriteAllTextAsync(args[1], rsa.ExportPkcs8PrivateKeyPem());
     await File.WriteAllTextAsync(args[2], rsa.ExportSubjectPublicKeyInfoPem());
-    Console.WriteLine($"Anahtar çifti üretildi. Private key'i güvenli ve uygulamadan ayrı tutun: {args[1]}");
+    Console.WriteLine($"Anahtar çifti üretildi. Özel anahtarı güvenli ve uygulamadan ayrı tutun: {args[1]}");
     return;
 }
 
@@ -53,5 +53,5 @@ if (args.Length == 9 && args[0].Equals("issue", StringComparison.OrdinalIgnoreCa
 
 Console.WriteLine("Kullanım:");
 Console.WriteLine("  init <private.pem> <public.pem>");
-Console.WriteLine("  issue <private.pem> <installationId> <customer> <days> <maxUsers> <modulesCsv> <licenseId> <output.json>");
+Console.WriteLine("  issue <private.pem> <kurulumKimligi> <musteri> <gun> <kullaniciLimiti> <modullerCsv> <lisansNo> <cikti.json>");
 Environment.ExitCode = 1;

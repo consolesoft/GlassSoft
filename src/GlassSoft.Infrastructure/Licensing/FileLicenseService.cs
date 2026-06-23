@@ -64,7 +64,7 @@ public sealed class FileLicenseService : ILicenseService
             var payloadBytes = Convert.FromBase64String(envelope.Payload);
             var signatureBytes = Convert.FromBase64String(envelope.Signature);
             if (string.IsNullOrWhiteSpace(_options.PublicKeyPem))
-                return Invalid("Lisans public key yapılandırılmamış.", installationId);
+                return Invalid("Lisans açık anahtarı yapılandırılmamış.", installationId);
 
             using var rsa = RSA.Create();
             rsa.ImportFromPem(_options.PublicKeyPem);

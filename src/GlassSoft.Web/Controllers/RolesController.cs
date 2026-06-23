@@ -197,13 +197,39 @@ public class RolesController : Controller
         model.PermissionGroups = permissions.GroupBy(p => p.Module)
             .Select(g => new PermissionGroupViewModel
             {
-                Module = g.Key,
+                ModuleCode = g.Key,
+                ModuleName = GetModuleName(g.Key),
                 Permissions = g.Select(p => new PermissionOptionViewModel
                 {
                     Id = p.Id,
-                    Action = p.Action,
-                    Description = p.Description ?? p.Code
+                    ActionCode = p.Action,
+                    ActionName = GetActionName(p.Action),
+                    Description = p.Description ?? $"{GetModuleName(p.Module)} modülü {GetActionName(p.Action).ToLowerInvariant()} yetkisi"
                 }).ToList()
             }).ToList();
     }
+
+    private static string GetModuleName(string module) => module switch
+    {
+        "Dashboard" => "Ana Sayfa",
+        "Customers" => "Müşteriler",
+        "Sales" => "Satış",
+        "Inventory" => "Stok ve Ürünler",
+        "Production" => "Üretim",
+        "Purchasing" => "Satın Alma",
+        "Accounting" => "Muhasebe",
+        "Reports" => "Raporlar",
+        "Administration" => "Yönetim",
+        _ => module
+    };
+
+    private static string GetActionName(string action) => action switch
+    {
+        "Read" => "Görüntüleme",
+        "Create" => "Oluşturma",
+        "Update" => "Güncelleme",
+        "Delete" => "Silme",
+        "Export" => "Dışa Aktarma / Yazdırma",
+        _ => action
+    };
 }

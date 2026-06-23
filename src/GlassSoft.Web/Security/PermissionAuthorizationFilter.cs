@@ -11,8 +11,8 @@ using GlassSoft.Application.Licensing;
 namespace GlassSoft.Web.Security;
 
 /// <summary>
-/// MVC eylemlerini Module.Action yetki parametrelerine bağlar.
-/// Yeni veya eşlenmemiş yazma eylemleri güvenli tarafta kalmak için Update kabul edilir.
+/// MVC eylemlerini teknik modül/işlem yetki parametrelerine bağlar.
+/// Yeni veya eşlenmemiş yazma eylemleri güvenli tarafta kalmak için güncelleme kabul edilir.
 /// </summary>
 public sealed class PermissionAuthorizationFilter : IAsyncAuthorizationFilter
 {
