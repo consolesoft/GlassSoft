@@ -5,6 +5,7 @@ using GlassSoft.Domain.Entities.Product;
 using GlassSoft.Domain.Entities.Purchasing;
 using GlassSoft.Domain.Entities.Sales;
 using GlassSoft.Domain.Entities.Recipe;
+using GlassSoft.Domain.Entities.Production;
 using GlassSoft.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,20 +20,26 @@ public static class DemoDataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext db)
     {
-        if (await db.Customers.AnyAsync())
-            return;
+        if (!await db.Customers.AnyAsync())
+        {
+            await SeedSystemSettingsAsync(db);
+            var groups   = await SeedProductGroupsAsync(db);
+            var products = await SeedProductsAsync(db, groups);
+            var recipes  = await SeedRecipesAsync(db, products);
+            await SeedOrderFeatureDefinitionsAsync(db);
+            var customers = await SeedCustomersAsync(db);
+            await SeedSuppliersAsync(db);
+            var cashRegister = await SeedCashRegistersAsync(db);
+            await SeedStockEntriesAsync(db, products);
+            await SeedOrdersAsync(db, customers, products, recipes);
+            await SeedAccountingAsync(db, customers, cashRegister);
+        }
 
-        await SeedSystemSettingsAsync(db);
-        var groups   = await SeedProductGroupsAsync(db);
-        var products = await SeedProductsAsync(db, groups);
-        var recipes  = await SeedRecipesAsync(db, products);
-        await SeedOrderFeatureDefinitionsAsync(db);
-        var customers = await SeedCustomersAsync(db);
-        await SeedSuppliersAsync(db);
-        var cashRegister = await SeedCashRegistersAsync(db);
-        await SeedStockEntriesAsync(db, products);
-        await SeedOrdersAsync(db, customers, products, recipes);
-        await SeedAccountingAsync(db, customers, cashRegister);
+        // Kesim optimizasyonu testi için her başlangıçta 20 adet optimize edilmemiş demo iş emri
+        await SeedDemoWorkOrdersAsync(db);
+
+        // İş emrine henüz dönüşmemiş, optimize edilmemiş 20 sipariş kalemi
+        await SeedUnoptimizedDemoOrderLinesAsync(db);
     }
 
     // ── 1. SİSTEM AYARLARI ────────────────────────────────────────────────────
@@ -459,5 +466,272 @@ public static class DemoDataSeeder
         );
 
         await db.SaveChangesAsync();
+    }
+
+    // ── 12. DEMO İŞ EMİRLERİ (optimizasyon testi için) ───────────────────────
+    private static async Task SeedDemoWorkOrdersAsync(ApplicationDbContext db)
+    {
+        var customers = await db.Customers.Where(c => c.IsActive).ToListAsync();
+        var products = await db.ProductItems.Where(p => p.IsPlate && p.IsActive).ToListAsync();
+        var recipes = await db.Recipes
+            .Include(r => r.Layers)
+            .ThenInclude(l => l.ProductItem)
+            .Where(r => r.IsActive)
+            .ToListAsync();
+
+        if (!customers.Any() || !products.Any()) return;
+
+        // Önceki demo iş emirlerini ve demo siparişlerini temizle
+        var oldWorkOrders = await db.WorkOrders
+            .Where(w => w.WorkOrderNumber.StartsWith("IE-DEMO-"))
+            .Include(w => w.Lines)
+            .Include(w => w.CuttingPlans).ThenInclude(p => p.Items)
+            .Include(w => w.Orders)
+            .ToListAsync();
+        foreach (var wo in oldWorkOrders)
+        {
+            foreach (var plan in wo.CuttingPlans.ToList())
+            {
+                foreach (var item in plan.Items.ToList())
+                    db.CuttingPlanItems.Remove(item);
+                db.CuttingPlans.Remove(plan);
+            }
+            foreach (var line in wo.Lines.ToList())
+                db.WorkOrderLines.Remove(line);
+            foreach (var woo in wo.Orders.ToList())
+                db.WorkOrderOrders.Remove(woo);
+            db.WorkOrders.Remove(wo);
+        }
+
+        var demoOrderNumbers = Enumerable.Range(1, 20).Select(i => $"SIP-DEMO-{i:000}").ToList();
+        var oldDemoOrders = await db.Orders
+            .Where(o => demoOrderNumbers.Contains(o.OrderNumber))
+            .Include(o => o.Lines)
+            .ToListAsync();
+        foreach (var o in oldDemoOrders)
+        {
+            foreach (var line in o.Lines.ToList())
+                db.OrderLines.Remove(line);
+            db.Orders.Remove(o);
+        }
+
+        await db.SaveChangesAsync();
+
+        var random = new Random(42); // deterministik sonuçlar
+        var now = TurkeyTime.Now;
+
+        for (int i = 1; i <= 20; i++)
+        {
+            var customer = customers[random.Next(customers.Count)];
+            var orderNumber = $"SIP-DEMO-{i:000}";
+
+            var order = new Order
+            {
+                OrderNumber = orderNumber,
+                Customer = customer,
+                OrderDate = now.AddDays(-random.Next(1, 10)),
+                DeliveryDate = now.AddDays(random.Next(5, 20)),
+                Status = OrderStatus.Onaylandi,
+                Currency = "TRY",
+                TaxRate = 20,
+                ApprovedAt = now.AddDays(-random.Next(0, 5)),
+                Notes = $"Demo sipariş #{i} - kesim optimizasyonu testi"
+            };
+
+            // Her demo siparişe 1-2 kalem ekle
+            int lineCount = random.Next(1, 3);
+            for (int j = 0; j < lineCount; j++)
+            {
+                bool useRecipe = random.Next(2) == 0 && recipes.Any();
+                int w = random.Next(400, 2500);
+                int h = random.Next(400, 2500);
+                int qty = random.Next(2, 12);
+
+                if (useRecipe)
+                {
+                    var recipe = recipes[random.Next(recipes.Count)];
+                    var area = w / 1000m * h / 1000m;
+                    order.Lines.Add(new OrderLine
+                    {
+                        Recipe = recipe,
+                        WidthMm = w,
+                        HeightMm = h,
+                        Quantity = qty,
+                        UnitPrice = recipe.BaseUnitPrice,
+                        TotalPrice = recipe.BaseUnitPrice * area * qty
+                    });
+                }
+                else
+                {
+                    var prod = products[random.Next(products.Count)];
+                    var area = w / 1000m * h / 1000m;
+                    order.Lines.Add(new OrderLine
+                    {
+                        ProductItem = prod,
+                        WidthMm = w,
+                        HeightMm = h,
+                        Quantity = qty,
+                        UnitPrice = prod.UnitPrice,
+                        TotalPrice = prod.UnitPrice * area * qty
+                    });
+                }
+            }
+            order.TotalAmount = order.Lines.Sum(l => l.TotalPrice);
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+
+            // Siparişi üretime al
+            order.Status = OrderStatus.Uretimde;
+            order.ProductionStartedAt = now.AddDays(-random.Next(0, 3));
+            await db.SaveChangesAsync();
+
+            // İş emri oluştur
+            var workOrderNumber = $"IE-DEMO-{i:000}";
+            var workOrder = new WorkOrder
+            {
+                WorkOrderNumber = workOrderNumber,
+                OrderId = order.Id,
+                PlannedDate = now.AddDays(random.Next(1, 7)),
+                Notes = $"Demo iş emri #{i} - optimize edilmemiş",
+                IsCompleted = false
+            };
+            db.WorkOrders.Add(workOrder);
+            await db.SaveChangesAsync();
+
+            // WorkOrderOrder junction kaydı
+            db.WorkOrderOrders.Add(new WorkOrderOrder { WorkOrderId = workOrder.Id, OrderId = order.Id });
+
+            // Reçete patlatma: sipariş kalemlerinden malzeme listesi oluştur
+            foreach (var line in order.Lines)
+            {
+                if (line.Recipe != null)
+                {
+                    foreach (var layer in line.Recipe.Layers)
+                    {
+                        db.WorkOrderLines.Add(new WorkOrderLine
+                        {
+                            WorkOrderId = workOrder.Id,
+                            OrderLineId = line.Id,
+                            ProductItemId = layer.ProductItemId,
+                            WidthMm = line.WidthMm ?? 0,
+                            HeightMm = line.HeightMm ?? 0,
+                            Quantity = line.Quantity * layer.QuantityPerUnit,
+                            MaterialType = layer.LayerType,
+                            IsOptimized = false
+                        });
+                    }
+                }
+                else if (line.ProductItem != null)
+                {
+                    db.WorkOrderLines.Add(new WorkOrderLine
+                    {
+                        WorkOrderId = workOrder.Id,
+                        OrderLineId = line.Id,
+                        ProductItemId = line.ProductItemId.GetValueOrDefault(),
+                        WidthMm = line.WidthMm ?? 0,
+                        HeightMm = line.HeightMm ?? 0,
+                        Quantity = line.Quantity,
+                        MaterialType = line.ProductItem.IsPlate ? "Glass" : "Other",
+                        IsOptimized = false
+                    });
+                }
+            }
+            await db.SaveChangesAsync();
+        }
+    }
+
+    // ── 13. OPTİMİZE EDİLMEMİŞ DEMO SİPARİŞ KALEMLERİ ───────────────────────
+    private static async Task SeedUnoptimizedDemoOrderLinesAsync(ApplicationDbContext db)
+    {
+        var customers = await db.Customers.Where(c => c.IsActive).ToListAsync();
+        var products = await db.ProductItems.Where(p => p.IsPlate && p.IsActive).ToListAsync();
+        var recipes = await db.Recipes
+            .Include(r => r.Layers)
+            .ThenInclude(l => l.ProductItem)
+            .Where(r => r.IsActive)
+            .ToListAsync();
+
+        if (!customers.Any() || (!products.Any() && !recipes.Any())) return;
+
+        // Önceki optimize edilmemiş demo siparişleri temizle
+        var unoptOrderNumbers = Enumerable.Range(1, 20).Select(i => $"SIP-UNOPT-{i:000}").ToList();
+        var oldUnoptOrders = await db.Orders
+            .Where(o => unoptOrderNumbers.Contains(o.OrderNumber))
+            .Include(o => o.Lines)
+            .ToListAsync();
+        foreach (var o in oldUnoptOrders)
+        {
+            foreach (var line in o.Lines.ToList())
+                db.OrderLines.Remove(line);
+            db.Orders.Remove(o);
+        }
+        await db.SaveChangesAsync();
+
+        var random = new Random(2026); // deterministik
+        var now = TurkeyTime.Now;
+
+        for (int i = 1; i <= 20; i++)
+        {
+            var customer = customers[random.Next(customers.Count)];
+            bool useRecipe = recipes.Any() && random.Next(2) == 0;
+            int w = random.Next(400, 2600);
+            int h = random.Next(400, 2600);
+            int qty = random.Next(2, 15);
+
+            var order = new Order
+            {
+                OrderNumber = $"SIP-UNOPT-{i:000}",
+                Customer = customer,
+                OrderDate = now.AddDays(-random.Next(1, 8)),
+                DeliveryDate = now.AddDays(random.Next(7, 25)),
+                Status = OrderStatus.Onaylandi,
+                Currency = "TRY",
+                TaxRate = 20,
+                ApprovedAt = now.AddDays(-random.Next(0, 4)),
+                Notes = $"Demo optimize edilmemiş sipariş #{i}",
+                TotalAmount = 0
+            };
+
+            decimal unitPrice;
+            decimal totalPrice;
+            var area = w / 1000m * h / 1000m;
+
+            if (useRecipe)
+            {
+                var recipe = recipes[random.Next(recipes.Count)];
+                unitPrice = recipe.BaseUnitPrice;
+                totalPrice = unitPrice * area * qty;
+                order.Lines.Add(new OrderLine
+                {
+                    Recipe = recipe,
+                    WidthMm = w,
+                    HeightMm = h,
+                    Quantity = qty,
+                    UnitPrice = unitPrice,
+                    TotalPrice = totalPrice,
+                    IsOptimized = false
+                });
+            }
+            else
+            {
+                var prod = products[random.Next(products.Count)];
+                unitPrice = prod.UnitPrice;
+                totalPrice = unitPrice * area * qty;
+                order.Lines.Add(new OrderLine
+                {
+                    ProductItem = prod,
+                    WidthMm = w,
+                    HeightMm = h,
+                    Quantity = qty,
+                    UnitPrice = unitPrice,
+                    TotalPrice = totalPrice,
+                    IsOptimized = false
+                });
+            }
+
+            order.TotalAmount = order.Lines.Sum(l => l.TotalPrice);
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+        }
     }
 }

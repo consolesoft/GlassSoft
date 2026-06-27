@@ -110,3 +110,18 @@ public class WorkOrderOrderDto
     public string OrderNumber { get; set; } = string.Empty;
     public string CustomerTitle { get; set; } = string.Empty;
 }
+
+public class CuttingPlanUpdateDto
+{
+    public List<CuttingPlanItemUpdateDto> Items { get; set; } = new();
+}
+
+public class CuttingPlanItemUpdateDto
+{
+    public int Id { get; set; }
+    public decimal X { get; set; }
+    public decimal Y { get; set; }
+    public decimal WidthMm { get; set; }
+    public decimal HeightMm { get; set; }
+    public bool IsRotated { get; set; }
+}

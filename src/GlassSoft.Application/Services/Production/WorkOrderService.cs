@@ -1,3 +1,4 @@
+using System.Globalization;
 using GlassSoft.Domain.Common;
 using GlassSoft.Application.DTOs.Production;
 using GlassSoft.Application.Interfaces;
@@ -419,6 +420,115 @@ public class WorkOrderService : IWorkOrderService
 
         var refreshed = await GetByIdAsync(workOrderId);
         return refreshed?.CuttingPlans ?? new List<CuttingPlanDto>();
+    }
+
+    public async Task UpdateCuttingPlanAsync(int workOrderId, int planId, CuttingPlanUpdateDto dto)
+    {
+        if (dto.Items == null || dto.Items.Count == 0)
+            throw new ArgumentException("Güncellenecek kesim parçası bulunamadı.");
+
+        var plan = await _planRepository.Query()
+            .Include(p => p.Items)
+            .Include(p => p.GlassPlateDefinition)
+            .Include(p => p.WorkOrder)
+            .FirstOrDefaultAsync(p => p.Id == planId && p.WorkOrderId == workOrderId)
+            ?? throw new KeyNotFoundException("Kesim planı bulunamadı.");
+
+        if (plan.WorkOrder.IsCompleted)
+            throw new InvalidOperationException("Tamamlanmış iş emrinin kesim planı değiştirilemez.");
+
+        var plateWidth = (double)plan.GlassPlateDefinition.WidthMm;
+        var plateHeight = (double)plan.GlassPlateDefinition.HeightMm;
+
+        // Aynı ID'den birden fazla gelmemesi ve tüm parçaların plana ait olması kontrol edilir.
+        var incomingIds = dto.Items.Select(i => i.Id).ToHashSet();
+        if (incomingIds.Count != dto.Items.Count)
+            throw new InvalidOperationException("Tekrarlayan parça kaydı tespit edildi.");
+
+        var existingItems = plan.Items.Where(i => !i.IsDeleted).ToList();
+        if (incomingIds.Count != existingItems.Count)
+            throw new InvalidOperationException("Güncellenen parça sayısı mevcut planla uyuşmuyor.");
+
+        foreach (var item in existingItems)
+        {
+            var update = dto.Items.FirstOrDefault(i => i.Id == item.Id)
+                ?? throw new InvalidOperationException($"Parça #{item.Id} için güncelleme bilgisi eksik.");
+
+            if (update.WidthMm <= 0 || update.HeightMm <= 0)
+                throw new InvalidOperationException($"Parça #{item.Id} için geçersiz ölçü.");
+
+            item.X = update.X;
+            item.Y = update.Y;
+            item.WidthMm = update.WidthMm;
+            item.HeightMm = update.HeightMm;
+            item.IsRotated = update.IsRotated;
+        }
+
+        // Çakışma ve sınır kontrolü
+        foreach (var item in existingItems)
+        {
+            var x2 = item.X + item.WidthMm;
+            var y2 = item.Y + item.HeightMm;
+
+            if (item.X < 0 || item.Y < 0 || x2 > (decimal)plateWidth || y2 > (decimal)plateHeight)
+                throw new InvalidOperationException($"Parça #{item.Id} plaka sınırları dışına taşıyor.");
+
+            foreach (var other in existingItems)
+            {
+                if (other.Id == item.Id) continue;
+                if (item.X < other.X + other.WidthMm && item.X + item.WidthMm > other.X &&
+                    item.Y < other.Y + other.HeightMm && item.Y + item.HeightMm > other.Y)
+                {
+                    throw new InvalidOperationException($"Parça #{item.Id} ile Parça #{other.Id} çakışıyor.");
+                }
+            }
+        }
+
+        // Fire oranlarını yeniden hesapla
+        var plateAreaM2 = (decimal)(plateWidth * plateHeight / 1_000_000.0);
+        var usedAreaM2 = existingItems.Sum(i => i.WidthMm * i.HeightMm / 1_000_000m);
+        plan.UsedAreaM2 = usedAreaM2;
+        plan.WasteAreaM2 = plateAreaM2 - usedAreaM2;
+        plan.WastePercentage = plateAreaM2 == 0 ? 0 : (plan.WasteAreaM2 / plateAreaM2) * 100;
+        plan.IsApproved = true;
+
+        // CSV ve DXF çıktılarını güncel pozisyonlara göre yeniden üret
+        plan.CsvOutput = GenerateCsvFromItems(existingItems);
+        plan.DxfOutput = GenerateDxfFromItems(existingItems, plateWidth, plateHeight);
+
+        await _planRepository.UpdateAsync(plan);
+    }
+
+    private static string GenerateCsvFromItems(List<CuttingPlanItem> items)
+    {
+        var ic = CultureInfo.InvariantCulture;
+        var lines = new List<string>(items.Count + 1) { "X,Y,Width,Height,Rotated,OrderLineId" };
+        foreach (var i in items)
+            lines.Add(string.Format(ic, "{0:F1},{1:F1},{2:F1},{3:F1},{4},{5}",
+                i.X, i.Y, i.WidthMm, i.HeightMm, i.IsRotated ? 1 : 0, i.OrderLineId));
+        return string.Join("\n", lines);
+    }
+
+    private static string GenerateDxfFromItems(List<CuttingPlanItem> items, double plateWidth, double plateHeight)
+    {
+        var ic = CultureInfo.InvariantCulture;
+        var sb = new System.Text.StringBuilder(256 + items.Count * 200);
+        sb.AppendLine("0\nSECTION\n2\nENTITIES");
+        AppendDxfRect(sb, 0, 0, plateWidth, plateHeight, 1);
+        foreach (var i in items)
+            AppendDxfRect(sb, (double)i.X, (double)i.Y, (double)i.WidthMm, (double)i.HeightMm, 2);
+        sb.AppendLine("0\nENDSEC\n0\nEOF");
+        return sb.ToString();
+    }
+
+    private static void AppendDxfRect(System.Text.StringBuilder sb, double x, double y, double w, double h, int layer)
+    {
+        var ic = CultureInfo.InvariantCulture;
+        sb.AppendLine(string.Format(ic, "0\nLWPOLYLINE\n8\n{0}\n90\n4\n70\n1", layer));
+        sb.AppendLine(string.Format(ic, "10\n{0:F2}\n20\n{1:F2}", x, y));
+        sb.AppendLine(string.Format(ic, "10\n{0:F2}\n20\n{1:F2}", x + w, y));
+        sb.AppendLine(string.Format(ic, "10\n{0:F2}\n20\n{1:F2}", x + w, y + h));
+        sb.AppendLine(string.Format(ic, "10\n{0:F2}\n20\n{1:F2}", x, y + h));
     }
 
     public async Task CompleteAsync(int id)

@@ -125,14 +125,22 @@
         {
             @foreach (var plan in Model.CuttingPlans)
             {
-                <div class="card">
+                <div class="card cutting-editor-card" data-plan-id="@plan.Id">
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-cut mr-2"></i>Kesim Planı #@plan.PlateIndex - @plan.ProductItemName
                             <small class="ml-2 text-muted">(@plan.PlateDisplayName mm)</small>
+                            @if (plan.IsApproved)
+                            {
+                                <span class="badge badge-success ml-2"><i class="fas fa-check mr-1"></i>Onaylı</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary ml-2"><i class="fas fa-magic mr-1"></i>Otomatik</span>
+                            }
                         </h3>
                         <div class="card-tools">
-                            <span class="badge badge-info mr-2">Fire: %@plan.WastePercentage.ToString("N1")</span>
+                            <span class="badge badge-info mr-2 waste-badge">Fire: %@plan.WastePercentage.ToString("N1")</span>
                             <a asp-action="DownloadCsv" asp-route-id="@Model.Id" asp-route-planId="@plan.Id" class="btn btn-success btn-xs">
                                 <i class="fas fa-file-csv mr-1"></i>CSV
                             </a>
@@ -141,7 +149,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="card-body text-center">
+                    <div class="card-body p-0">
                         @{
                             var ic = System.Globalization.CultureInfo.InvariantCulture;
                             var svgScale = 0.15;
@@ -151,34 +159,83 @@
                             var plateH = ((double)plan.PlateHeightMm).ToString(ic);
                             var colors = new[] { "#17a2b8", "#28a745", "#ffc107", "#dc3545", "#6f42c1", "#fd7e14", "#20c997", "#e83e8c" };
                         }
-                        <svg width="@svgW" height="@svgH" viewBox="0 0 @plateW @plateH"
-                             style="border: 2px solid #6c757d; background: #1a1a2e; max-width: 100%;">
-                            <!-- Plaka çerçevesi -->
-                            <rect x="0" y="0" width="@plateW" height="@plateH"
-                                  fill="none" stroke="#6c757d" stroke-width="3" />
-                            <!-- Parçalar -->
-                            @{ var idx = 0; }
-                            @foreach (var item in plan.Items)
-                            {
-                                var color = colors[idx % colors.Length];
-                                var ix = ((double)item.X).ToString(ic);
-                                var iy = ((double)item.Y).ToString(ic);
-                                var iw = ((double)item.WidthMm).ToString(ic);
-                                var ih = ((double)item.HeightMm).ToString(ic);
-                                var tx = ((double)(item.X + item.WidthMm / 2)).ToString(ic);
-                                var ty = ((double)(item.Y + item.HeightMm / 2)).ToString(ic);
-                                var fs = Math.Max(30, Math.Min((double)item.WidthMm / 6, (double)item.HeightMm / 3)).ToString(ic);
-                                var label = $"{item.WidthMm.ToString("0")}x{item.HeightMm.ToString("0")}";
-                                <rect x="@ix" y="@iy" width="@iw" height="@ih"
-                                      fill="@color" fill-opacity="0.6" stroke="@color" stroke-width="2" />
-                                @Html.Raw($"<text x=\"{tx}\" y=\"{ty}\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"white\" font-size=\"{fs}\">{label}</text>")
-                                idx++;
-                            }
-                        </svg>
-                        <div class="mt-2 small text-muted">
-                            Plaka: @plan.PlateWidthMm.ToString("0") x @plan.PlateHeightMm.ToString("0") mm |
-                            Kullanılan: @plan.UsedAreaM2.ToString("N2") m² |
-                            Fire: @plan.WasteAreaM2.ToString("N2") m² (@plan.WastePercentage.ToString("N1")%)
+                        <div class="cutting-toolbar">
+                            <div class="btn-group btn-group-sm">
+                                @if (!Model.IsCompleted)
+                                {
+                                    <button type="button" class="btn btn-primary btn-save-plan" disabled>
+                                        <i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-reset-plan">
+                                        <i class="fas fa-undo mr-1"></i> Sıfırla
+                                    </button>
+                                    <button type="button" class="btn btn-info btn-rotate-piece" disabled>
+                                        <i class="fas fa-sync-alt mr-1"></i> Döndür
+                                    </button>
+                                }
+                            </div>
+                            <div class="cutting-status">
+                                <span class="piece-info text-muted"><i class="fas fa-mouse-pointer mr-1"></i>Cam seçilmedi</span>
+                            </div>
+                        </div>
+                        <div class="cutting-canvas-wrapper">
+                            <svg class="cutting-svg" width="@svgW" height="@svgH" viewBox="0 0 @plateW @plateH"
+                                 data-plate-width="@plateW" data-plate-height="@plateH" data-plan-id="@plan.Id"
+                                 style="max-width: 100%; user-select: none;">
+                                <defs>
+                                    <pattern id="gridPattern" width="50" height="50" patternUnits="userSpaceOnUse">
+                                        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+                                    </pattern>
+                                </defs>
+                                <!-- Plaka arka planı -->
+                                <rect x="0" y="0" width="@plateW" height="@plateH" fill="url(#gridPattern)" />
+                                <!-- Plaka çerçevesi -->
+                                <rect x="0" y="0" width="@plateW" height="@plateH" class="plate-frame" />
+                                <!-- Parçalar -->
+                                @{ var idx = 0; }
+                                @foreach (var item in plan.Items)
+                                {
+                                    var color = colors[idx % colors.Length];
+                                    var ix = ((double)item.X).ToString(ic);
+                                    var iy = ((double)item.Y).ToString(ic);
+                                    var iw = ((double)item.WidthMm).ToString(ic);
+                                    var ih = ((double)item.HeightMm).ToString(ic);
+                                    var tx = ((double)(item.X + item.WidthMm / 2)).ToString(ic);
+                                    var ty = ((double)(item.Y + item.HeightMm / 2)).ToString(ic);
+                                var labelText = $"{item.WidthMm.ToString("0")}x{item.HeightMm.ToString("0")}";
+                                var neededWidth = labelText.Length * 0.6;
+                                var byWidth = neededWidth > 0 ? (double)item.WidthMm / neededWidth : 100;
+                                var byHeight = (double)item.HeightMm / 2.2;
+                                var fs = Math.Max(12, Math.Min(Math.Min(byWidth, byHeight), 60)).ToString(ic);
+                                    <g class="piece-group" data-id="@item.Id" data-x="@ix" data-y="@iy"
+                                       data-width="@iw" data-height="@ih" data-rotation="@(item.IsRotated ? "1" : "0")"
+                                       data-color="@color" transform="translate(@ix, @iy)">
+                                        <rect x="0" y="0" width="@iw" height="@ih" rx="4" ry="4"
+                                              fill="@color" fill-opacity="0.65" stroke="@color" stroke-width="2" class="piece-rect" />
+                                        <text x="@((double)item.WidthMm / 2).ToString(ic)" y="@((double)item.HeightMm / 2).ToString(ic)"
+                                              text-anchor="middle" dominant-baseline="central" fill="white" font-size="@fs" class="piece-label">@labelText</text>
+                                    </g>
+                                    idx++;
+                                }
+                            </svg>
+                        </div>
+                        <div class="cutting-stats">
+                            <div class="row text-center">
+                                <div class="col-4 border-right border-secondary">
+                                    <div class="text-muted small">Plaka</div>
+                                    <strong class="plate-size">@plan.PlateWidthMm.ToString("0") x @plan.PlateHeightMm.ToString("0") mm</strong>
+                                </div>
+                                <div class="col-4 border-right border-secondary">
+                                    <div class="text-muted small">Kullanılan</div>
+                                    <strong class="used-area">@plan.UsedAreaM2.ToString("N2") m²</strong>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-muted small">Fire</div>
+                                    <strong class="waste-area @(plan.WastePercentage < 20 ? "text-success" : plan.WastePercentage < 35 ? "text-warning" : "text-danger")">
+                                        @plan.WasteAreaM2.ToString("N2") m² (%@plan.WastePercentage.ToString("N1"))
+                                    </strong>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -293,8 +350,27 @@
 </div>
 
 <script>
-$(function() {
-    $('#btnWorkOrderDelete').on('click', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    var deleteBtn = document.getElementById('btnWorkOrderDelete');
+    var deleteForm = document.getElementById('workOrderDeleteForm');
+    if (!deleteBtn || !deleteForm) return;
+
+    deleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        var doSubmit = function() {
+            deleteBtn.disabled = true;
+            deleteForm.submit();
+        };
+
+        // SweetAlert yüklenmemişse basit confirm kullan
+        if (typeof Swal === 'undefined') {
+            if (confirm('@Model.WorkOrderNumber iş emrini silmek istediğinize emin misiniz?')) {
+                doSubmit();
+            }
+            return;
+        }
+
         Swal.fire({
             title: 'İş emrini sil?',
             html: '<b>@Model.WorkOrderNumber</b> iş emrini silmek istediğinize emin misiniz?',
@@ -303,9 +379,342 @@ $(function() {
             confirmButtonText: 'Evet, sil',
             cancelButtonText: 'Vazgeç',
             confirmButtonColor: '#dc3545'
-        }).then(function(r) { if (r.isConfirmed) $('#workOrderDeleteForm').submit(); });
+        }).then(function(result) {
+            if (result.isConfirmed) doSubmit();
+        });
     });
 });
+</script>
+
+<script>
+    // ============================================================
+    // Kesim Planı İnteraktif Editör
+    // ============================================================
+    (function() {
+        var tokenValue = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        var workOrderId = @Model.Id;
+        var isCompleted = @(Model.IsCompleted ? "true" : "false");
+
+        // Her plan için editör durumunu saklar
+        var editors = {};
+
+            function formatNumber(num, decimals) {
+                var d = decimals == null ? 1 : decimals;
+                return Number(num).toFixed(d);
+            }
+
+            function fitFontSize(item, text) {
+                // mm bazlı: karakter yaklaşık font-size'in 0.6 katı kadar yer kaplar
+                var neededWidth = text.length * 0.6;
+                var byWidth = neededWidth > 0 ? item.width / neededWidth : 100;
+                var byHeight = item.height / 2.2;
+                return Math.max(12, Math.min(byWidth, byHeight, 60));
+            }
+
+        function createEditor(card) {
+            var planId = parseInt(card.dataset.planId, 10);
+            var svg = card.querySelector('.cutting-svg');
+            var plateW = parseFloat(svg.dataset.plateWidth);
+            var plateH = parseFloat(svg.dataset.plateHeight);
+            var saveBtn = card.querySelector('.btn-save-plan');
+            var resetBtn = card.querySelector('.btn-reset-plan');
+            var rotateBtn = card.querySelector('.btn-rotate-piece');
+            var infoLabel = card.querySelector('.piece-info');
+            var wasteBadge = card.querySelector('.waste-badge');
+            var wasteAreaEl = card.querySelector('.waste-area');
+            var usedAreaEl = card.querySelector('.used-area');
+
+            var state = {
+                planId: planId,
+                items: [],
+                selectedId: null,
+                dirty: false,
+                dragging: false,
+                dragItem: null,
+                startMouse: null,
+                startPos: null
+            };
+            editors[planId] = state;
+
+            // Parça verilerini başlat
+            svg.querySelectorAll('.piece-group').forEach(function(g) {
+                state.items.push({
+                    id: parseInt(g.dataset.id, 10),
+                    x: parseFloat(g.dataset.x),
+                    y: parseFloat(g.dataset.y),
+                    width: parseFloat(g.dataset.width),
+                    height: parseFloat(g.dataset.height),
+                    rotated: g.dataset.rotation === '1',
+                    el: g
+                });
+            });
+
+            // İlk render'da label'ları parçaya sığacak şekilde ayarla
+            state.items.forEach(updateTransform);
+
+            function getSVGPoint(evt) {
+                var pt = svg.createSVGPoint();
+                pt.x = evt.clientX;
+                pt.y = evt.clientY;
+                return pt.matrixTransform(svg.getScreenCTM().inverse());
+            }
+
+            function updateTransform(item) {
+                item.el.setAttribute('transform', 'translate(' + item.x + ',' + item.y + ')');
+                item.el.dataset.x = item.x;
+                item.el.dataset.y = item.y;
+                item.el.dataset.width = item.width;
+                item.el.dataset.height = item.height;
+                item.el.dataset.rotation = item.rotated ? '1' : '0';
+
+                var label = item.el.querySelector('.piece-label');
+                if (label) {
+                    label.setAttribute('x', formatNumber(item.width / 2, 1));
+                    label.setAttribute('y', formatNumber(item.height / 2, 1));
+                    var text = formatNumber(item.width, 0) + 'x' + formatNumber(item.height, 0);
+                    var fs = fitFontSize(item, text);
+                    label.setAttribute('font-size', formatNumber(fs, 1));
+                    label.textContent = text;
+                }
+            }
+
+            function overlaps(a, b) {
+                return a.x < b.x + b.width && a.x + a.width > b.x &&
+                       a.y < b.y + b.height && a.y + a.height > b.y;
+            }
+
+            function isOutOfBounds(item) {
+                return item.x < 0 || item.y < 0 ||
+                       item.x + item.width > plateW || item.y + item.height > plateH;
+            }
+
+            function validateSingle(item) {
+                if (isOutOfBounds(item)) return false;
+                for (var i = 0; i < state.items.length; i++) {
+                    var other = state.items[i];
+                    if (other.id !== item.id && overlaps(item, other)) return false;
+                }
+                return true;
+            }
+
+            function refreshVisuals() {
+                state.items.forEach(function(item) {
+                    var valid = validateSingle(item);
+                    item.el.classList.toggle('invalid', !valid);
+                    updateTransform(item);
+                });
+            }
+
+            function renderItemInfo(item) {
+                if (!item || !infoLabel) return;
+                infoLabel.innerHTML = '<i class="fas fa-cube mr-1"></i>Cam #' + item.id +
+                    ' &mdash; ' + formatNumber(item.width, 0) + ' x ' + formatNumber(item.height, 0) + ' mm' +
+                    ' &middot; X:' + formatNumber(item.x, 0) + ' Y:' + formatNumber(item.y, 0) +
+                    (item.rotated ? ' <span class="badge badge-info ml-1">Döndürülmüş</span>' : '');
+            }
+
+            function selectItem(item) {
+                state.items.forEach(function(it) { it.el.classList.remove('selected'); });
+                if (item) {
+                    state.selectedId = item.id;
+                    item.el.classList.add('selected');
+                    rotateBtn.disabled = false;
+                    infoLabel.classList.add('active');
+                    renderItemInfo(item);
+                } else {
+                    state.selectedId = null;
+                    rotateBtn.disabled = true;
+                    infoLabel.classList.remove('active');
+                    infoLabel.innerHTML = '<i class="fas fa-mouse-pointer mr-1"></i>Cam seçilmedi';
+                }
+            }
+
+            function setDirty(dirty) {
+                state.dirty = dirty;
+                if (saveBtn) saveBtn.disabled = !dirty;
+            }
+
+            function recalcStats() {
+                var used = 0;
+                state.items.forEach(function(item) {
+                    used += item.width * item.height;
+                });
+                used = used / 1000000; // mm2 -> m2
+                var plateArea = (plateW * plateH) / 1000000;
+                var waste = plateArea - used;
+                var wastePct = plateArea === 0 ? 0 : (waste / plateArea) * 100;
+
+                if (usedAreaEl) usedAreaEl.textContent = used.toFixed(2) + ' m²';
+                if (wasteAreaEl) {
+                    wasteAreaEl.textContent = waste.toFixed(2) + ' m² (%' + wastePct.toFixed(1) + ')';
+                    wasteAreaEl.className = 'waste-area ' + (wastePct < 20 ? 'text-success' : wastePct < 35 ? 'text-warning' : 'text-danger');
+                }
+                if (wasteBadge) wasteBadge.textContent = 'Fire: %' + wastePct.toFixed(1);
+            }
+
+            function onPointerDown(evt) {
+                if (isCompleted) return;
+                var group = evt.target.closest('.piece-group');
+                if (!group) return;
+                evt.preventDefault();
+                var item = state.items.find(function(i) { return i.id === parseInt(group.dataset.id, 10); });
+                if (!item) return;
+
+                selectItem(item);
+                state.dragging = true;
+                state.dragItem = item;
+                state.startMouse = getSVGPoint(evt);
+                state.startPos = { x: item.x, y: item.y };
+                item.el.classList.add('dragging');
+            }
+
+            function onPointerMove(evt) {
+                if (!state.dragging || !state.dragItem) return;
+                evt.preventDefault();
+                var pt = getSVGPoint(evt);
+                var dx = pt.x - state.startMouse.x;
+                var dy = pt.y - state.startMouse.y;
+                var item = state.dragItem;
+                item.x = state.startPos.x + dx;
+                item.y = state.startPos.y + dy;
+                refreshVisuals();
+                recalcStats();
+                renderItemInfo(item);
+            }
+
+            function onPointerUp(evt) {
+                if (!state.dragging || !state.dragItem) return;
+                var item = state.dragItem;
+                item.el.classList.remove('dragging');
+
+                // Çakışma / sınır dışındaysa eski konuma geri döndür
+                if (!validateSingle(item)) {
+                    item.x = state.startPos.x;
+                    item.y = state.startPos.y;
+                    toastr.warning('Geçersiz konum. Parça başka camla çakışıyor veya plaka dışına çıkıyor.');
+                } else {
+                    // Mm hassasiyetinde yuvarlama
+                    item.x = Math.round(item.x * 10) / 10;
+                    item.y = Math.round(item.y * 10) / 10;
+                    if (item.x !== state.startPos.x || item.y !== state.startPos.y) {
+                        setDirty(true);
+                    }
+                }
+                refreshVisuals();
+                recalcStats();
+                state.dragging = false;
+                state.dragItem = null;
+            }
+
+            svg.addEventListener('mousedown', onPointerDown);
+            svg.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+            svg.addEventListener('touchstart', function(e) { onPointerDown(e.touches[0]); }, { passive: false });
+            svg.addEventListener('touchmove', function(e) { onPointerMove(e.touches[0]); }, { passive: false });
+            window.addEventListener('touchend', function(e) { onPointerUp(e.changedTouches[0]); });
+
+            // SVG dışına tıklayınca seçimi kaldır
+            svg.addEventListener('click', function(evt) {
+                if (evt.target === svg || evt.target.closest('.cutting-svg') === svg && !evt.target.closest('.piece-group')) {
+                    selectItem(null);
+                }
+            });
+
+            if (rotateBtn) {
+                rotateBtn.addEventListener('click', function() {
+                    var item = state.items.find(function(i) { return i.id === state.selectedId; });
+                    if (!item) return;
+                    var oldW = item.width, oldH = item.height;
+                    item.width = oldH;
+                    item.height = oldW;
+                    item.rotated = !item.rotated;
+
+                    // Döndürme sonrası sağ alt köşe dışarı çıkarsa sol üste kaydır
+                    if (item.x + item.width > plateW) item.x = plateW - item.width;
+                    if (item.y + item.height > plateH) item.y = plateH - item.height;
+                    if (item.x < 0) item.x = 0;
+                    if (item.y < 0) item.y = 0;
+
+                    if (!validateSingle(item)) {
+                        // Geri al
+                        item.width = oldW;
+                        item.height = oldH;
+                        item.rotated = !item.rotated;
+                        toastr.warning('Döndürme sonrası çakışma oluşuyor.');
+                    } else {
+                        setDirty(true);
+                    }
+                    refreshVisuals();
+                    recalcStats();
+                    selectItem(item);
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    window.location.reload();
+                });
+            }
+
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    if (!state.dirty) return;
+                    var payload = {
+                        Items: state.items.map(function(item) {
+                            return {
+                                Id: item.id,
+                                X: item.x,
+                                Y: item.y,
+                                WidthMm: item.width,
+                                HeightMm: item.height,
+                                IsRotated: item.rotated
+                            };
+                        })
+                    };
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Kaydediliyor';
+                    $.ajax({
+                        url: '@Url.Action("UpdateCuttingPlan", "WorkOrders")?id=' + workOrderId + '&planId=' + planId,
+                        type: 'POST',
+                        contentType: 'application/json; charset=utf-8',
+                        data: JSON.stringify(payload),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'RequestVerificationToken': tokenValue
+                        },
+                        success: function(data) {
+                            if (data.success) {
+                                setDirty(false);
+                                toastr.success('Kesim planı güncellendi.');
+                                // Onaylı rozetini güncelle
+                                var title = card.querySelector('.card-title');
+                                if (title && !title.querySelector('.badge-success')) {
+                                    var autoBadge = title.querySelector('.badge-secondary');
+                                    if (autoBadge) autoBadge.remove();
+                                    var badge = document.createElement('span');
+                                    badge.className = 'badge badge-success ml-2';
+                                    badge.innerHTML = '<i class="fas fa-check mr-1"></i>Onaylı';
+                                    title.appendChild(badge);
+                                }
+                            } else {
+                                toastr.error(data.message || 'Kaydetme başarısız.');
+                            }
+                        },
+                        error: function(xhr) {
+                            var msg = xhr.responseJSON?.message || 'Kaydetme sırasında bir hata oluştu.';
+                            toastr.error(msg);
+                        },
+                        complete: function() {
+                            saveBtn.disabled = !state.dirty;
+                            saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet';
+                        }
+                    });
+                });
+            }
+        }
+
+        document.querySelectorAll('.cutting-editor-card').forEach(createEditor);
+    })();
 </script>
 
 <!-- Loading Overlay -->
@@ -354,5 +763,120 @@ $(function() {
         }
     });
 </script>
+
+@section Styles {
+<style>
+    .cutting-editor-card {
+        overflow: hidden;
+    }
+    .cutting-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: rgba(15, 52, 96, 0.25);
+        border-bottom: 1px solid var(--gs-border);
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .cutting-toolbar .btn-group {
+        flex-wrap: wrap;
+    }
+    .cutting-status {
+        font-size: 0.85rem;
+        color: var(--gs-text-muted);
+    }
+    .cutting-status .piece-info {
+        transition: color 0.2s;
+    }
+    .cutting-status .piece-info.active {
+        color: var(--gs-accent);
+        font-weight: 600;
+    }
+    .cutting-canvas-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem;
+        background: #0f0f25;
+        overflow: auto;
+    }
+    .cutting-svg {
+        border: 2px solid #6c757d;
+        background: #1a1a2e;
+        border-radius: 4px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        cursor: default;
+    }
+    .cutting-svg .plate-frame {
+        fill: none;
+        stroke: #6c757d;
+        stroke-width: 3;
+    }
+    .piece-group {
+        cursor: grab;
+        transition: filter 0.15s;
+    }
+    .piece-group:hover .piece-rect {
+        filter: brightness(1.15);
+        stroke-width: 3;
+    }
+    .piece-group.dragging {
+        cursor: grabbing;
+    }
+    .piece-group.dragging .piece-rect {
+        fill-opacity: 0.85;
+        stroke: #fff;
+        stroke-width: 3;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    }
+    .piece-group.selected .piece-rect {
+        stroke: #fff;
+        stroke-width: 3;
+        stroke-dasharray: 8 4;
+        animation: dashMove 1s linear infinite;
+    }
+    .piece-group.invalid .piece-rect {
+        fill: #dc3545 !important;
+        fill-opacity: 0.75 !important;
+        stroke: #ff6b6b !important;
+    }
+    .piece-label {
+        pointer-events: none;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+        font-weight: 600;
+    }
+    .piece-group:hover .piece-label {
+        font-size: calc(1.1em);
+    }
+    @@keyframes dashMove {
+        to { stroke-dashoffset: -12; }
+    }
+    .cutting-stats {
+        padding: 0.75rem 1rem;
+        background: rgba(15, 52, 96, 0.15);
+        border-top: 1px solid var(--gs-border);
+    }
+    .cutting-stats .border-right {
+        border-color: rgba(255,255,255,0.1) !important;
+    }
+    body:not(.dark-mode) .cutting-canvas-wrapper {
+        background: #e9ecef;
+    }
+    body:not(.dark-mode) .cutting-svg {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+    }
+    body:not(.dark-mode) .cutting-svg .plate-frame {
+        stroke: #adb5bd;
+    }
+    body:not(.dark-mode) .cutting-toolbar {
+        background: rgba(23, 162, 184, 0.08);
+    }
+    body:not(.dark-mode) .cutting-stats {
+        background: rgba(23, 162, 184, 0.05);
+    }
+</style>
+}
 
 @await Html.PartialAsync("_PrintModal")

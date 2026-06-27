@@ -152,7 +152,8 @@ public static class SeedData
                 .Select(rp => rp.PermissionId)
                 .ToListAsync();
             // İlk kurulumda varsayılanları ata; yönetici sonradan yaptığı seçimi koruyabilsin.
-            if (assignedIds.Count > 0) continue;
+            // Admin rolüne ise her başlangıçta eksik yetkileri tamamla (güvenlik/destek amaçlı).
+            if (assignedIds.Count > 0 && !string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase)) continue;
             context.RolePermissions.AddRange(permissionIds
                 .Except(assignedIds)
                 .Select(id => new RolePermission { RoleId = role.Id, PermissionId = id }));

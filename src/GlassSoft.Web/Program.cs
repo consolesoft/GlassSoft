@@ -51,6 +51,12 @@ app.UseStaticFiles();
 app.UseMiddleware<LicenseMiddleware>();
 
 app.UseAuthentication();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<DevelopmentAutoLoginMiddleware>();
+}
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

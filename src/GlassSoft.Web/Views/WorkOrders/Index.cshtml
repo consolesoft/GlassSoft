@@ -9,6 +9,22 @@
     <script>document.addEventListener('DOMContentLoaded', function() { toastr.success('@TempData["Success"]'); });</script>
 }
 
+<style>
+    #tblWorkOrders td.badge-cell {
+        min-width: 220px;
+        word-break: break-all;
+        overflow-wrap: anywhere;
+    }
+    #tblWorkOrders td.badge-cell .badge-wrap {
+        white-space: normal !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+        display: inline-block;
+        max-width: 100%;
+        line-height: 1.2;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-industry mr-2"></i>İş Emirleri</h3>
@@ -23,7 +39,7 @@
             <thead>
                 <tr>
                     <th>İş Emri No</th>
-                    <th>Siparişler</th>
+                    <th style="min-width: 220px;">Siparişler</th>
                     <th>Planlanan Tarih</th>
                     <th>Malzeme</th>
                     <th>Kesim Planı</th>
@@ -36,19 +52,19 @@
                 {
                     <tr>
                         <td><strong>@item.WorkOrderNumber</strong></td>
-                        <td>
+                        <td class="badge-cell">
                             @if (item.RelatedOrders.Any())
                             {
                                 @foreach (var ro in item.RelatedOrders)
                                 {
                                     <a asp-controller="Orders" asp-action="Details" asp-route-id="@ro.OrderId"
-                                       class="badge badge-info mr-1" title="@ro.CustomerTitle">@ro.OrderNumber</a>
+                                       class="badge badge-info badge-wrap mr-1 mb-1" title="@ro.CustomerTitle">@ro.OrderNumber</a>
                                 }
                             }
                             else if (item.OrderId > 0)
                             {
                                 <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.OrderId"
-                                   class="badge badge-info">@item.OrderNumber</a>
+                                   class="badge badge-info badge-wrap mr-1">@item.OrderNumber</a>
                                 <small class="text-muted ml-1">@item.CustomerTitle</small>
                             }
                         </td>
@@ -87,5 +103,5 @@
 </div>
 
 @section Scripts {
-    <script>$(document).ready(function() { $('#tblWorkOrders').DataTable({ "order": [[0, "desc"]] }); });</script>
+    <script>$(document).ready(function() { $('#tblWorkOrders').DataTable({ "order": [[0, "desc"]], "autoWidth": false }); });</script>
 }
