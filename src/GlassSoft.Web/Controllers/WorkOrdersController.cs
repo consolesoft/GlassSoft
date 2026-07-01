@@ -86,6 +86,25 @@ public class WorkOrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCuttingPlan(int id, int planId, [FromBody] CuttingPlanUpdateDto dto)
+    {
+        try
+        {
+            await _service.UpdateCuttingPlanAsync(id, planId, dto);
+            return Json(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(int id)
     {
         try

@@ -11,6 +11,7 @@ public interface IWorkOrderService
     Task DeleteAsync(int id);
     Task<string> GenerateWorkOrderNumberAsync();
     Task<List<CuttingPlanDto>> RunCuttingOptimizationAsync(int workOrderId);
+    Task UpdateCuttingPlanAsync(int workOrderId, int planId, CuttingPlanUpdateDto dto);
     Task<List<UnoptimizedOrderLineDto>> GetUnoptimizedOrderLinesAsync();
     Task<WorkOrderDto> CreateFromLinesAsync(WorkOrderCreateFromLinesDto dto);
 }

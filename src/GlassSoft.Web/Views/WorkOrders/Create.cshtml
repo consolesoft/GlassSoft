@@ -9,6 +9,22 @@
     <script>document.addEventListener('DOMContentLoaded', function() { toastr.error('@TempData["Error"]'); });</script>
 }
 
+<style>
+    #tblLines td.badge-cell {
+        min-width: 180px;
+        word-break: break-all;
+        overflow-wrap: anywhere;
+    }
+    #tblLines td.badge-cell .badge {
+        white-space: normal !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+        display: inline-block;
+        max-width: 100%;
+        line-height: 1.2;
+    }
+</style>
+
 <form asp-action="Create" method="post" id="woForm">
     <div class="row">
         <div class="col-md-8">
@@ -39,7 +55,7 @@
                                             <label class="custom-control-label" for="checkAll"></label>
                                         </div>
                                     </th>
-                                    <th>Sipariş</th>
+                                    <th style="min-width: 180px;">Sipariş</th>
                                     <th>Müşteri</th>
                                     <th>Ürün / Reçete</th>
                                     <th class="text-right">En (mm)</th>
@@ -60,7 +76,9 @@
                                                 <label class="custom-control-label" for="chk_@line.OrderLineId"></label>
                                             </div>
                                         </td>
-                                        <td><span class="badge badge-info">@line.OrderNumber</span></td>
+                                        <td class="badge-cell">
+                                            <span class="badge badge-info">@line.OrderNumber</span>
+                                        </td>
                                         <td>@line.CustomerTitle</td>
                                         <td>
                                             @if (line.ProductItemName != null)
@@ -149,6 +167,7 @@
         var dt = $('#tblLines').DataTable({
             pageLength: 25,
             order: [[1, 'asc'], [3, 'asc']],
+            autoWidth: false,
             columnDefs: [{ orderable: false, targets: 0 }]
         });
 
